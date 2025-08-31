@@ -950,8 +950,58 @@ install_all() {
   fi
 }
 
+# Shows version information with logo
+show_version() {
+  # Get information from package.json
+  local description name version website author
+  website=$(jq -r '.homepage' < package.json 2>/dev/null || echo "https://github.com/jv-k/macos-updatetool")
+  version=$(jq -r '.version' < package.json 2>/dev/null || echo "development")
+  author=$(jq -r '.author' < package.json 2>/dev/null | sed 's/<.*>//' | sed 's/[[:space:]]*$//' || echo "John Valai")
+  
+  echo; show_logo
+  style_wrap DIM "Version: $(style_wrap RESET BOLD "${version}")"
+  style_wrap DIM "Author: $(style_wrap RESET BOLD "${author}")"
+  style_wrap DIM "Website: $(style_wrap RESET BOLD "${website}")"
+}
+
+# Shows configuration file location and status
+show_config() {
+  echo
+  msg_header h2 --upper "Configuration"
+  echo
+  msg_info --color "Configuration file location:"
+  echo "  $(style_wrap BOLD "${APPLIST}")"
+  echo
+  
+  if [[ -f "$APPLIST" ]]; then
+    msg_success --color "Configuration file exists"
+    echo
+    
+    # Validate YAML only
+    if command -v yamllint >/dev/null 2>&1; then
+      if yamllint "$APPLIST" &> /dev/null; then
+        msg_success --color "Configuration file is valid YAML"
+      else
+        msg_error --color "Configuration file contains invalid YAML"
+        echo
+        msg_info "Run $(style_wrap CYAN "yamllint \"$APPLIST\"") for details"
+      fi
+    else
+      msg_warning --color "yamllint not found - cannot validate YAML syntax"
+      echo
+      msg_info "Install with: $(style_wrap CYAN "brew install yamllint")"
+    fi
+  else
+    msg_warning --color "Configuration file does not exist"
+    echo
+    msg_info "You can create it by running any install command, or manually create:"
+    echo "  $(style_wrap DIM "mkdir -p $(dirname "$APPLIST")")"
+    echo "  $(style_wrap DIM "touch \"$APPLIST\"")"
+  fi
+}
+
 main() {
-  if [[ "$1" != "completions" ]]; then
+  if [[ "$1" != "completions" && "$1" != "--version" && "$1" != "-v" && "$1" != "--config" ]]; then
     echo
     check_dependencies
     check_applist_file
@@ -971,6 +1021,14 @@ main() {
   case "$1" in
     -h | --help | help)
       show_help
+      exit 0
+      ;;
+    --version | -v)
+      show_version
+      exit 0
+      ;;
+    --config)
+      show_config
       exit 0
       ;;
     completions)
@@ -1156,18 +1214,18 @@ show_logo() {
 # Displays the help message with all available options.
 show_help() {
   # Get description from package.json
-  local description name version website
+  local description
   description=$(jq -r '.description' < package.json)
-  name=$(jq -r '.name' < package.json)
-  website=$(jq -r '.homepage' < package.json)
-  version=$(jq -r '.version' < package.json)
-  echo; show_logo
-  style_wrap DIM "Version: ${version}"
-  style_wrap DIM "Website: ${website}\n"
-  style_wrap ITALIC M "${description}\n"
-  
+  show_version
+  style_wrap ITALIC M "\n${description}\n"
   msg_header h3 --upper "Usage"
   echo -e "  $(style_wrap BOLD "${name} <resource-type> [resource-subtype] <command> [sub-command] [pkg-name]")\n"
+
+  msg_header h3 --upper "Global Options"
+  echo -e "  $(style_wrap CYAN BOLD "-h, --help")    Show this help message."
+  echo -e "  $(style_wrap CYAN BOLD "-v, --version")  Show version information with logo."
+  echo -e "  $(style_wrap CYAN BOLD "--config")       Show configuration file location and status."
+  echo -e "  $(style_wrap CYAN BOLD "completions")    Generate shell completion script.\n"
 
   msg_header h3 --upper "Resource Types"
   echo -e "  $(style_wrap CYAN BOLD "brew")        Manages Homebrew formulas and casks."
@@ -1192,10 +1250,6 @@ show_help() {
   msg_header h3 --upper "Sub-Commands"
   echo -e "  $(style_wrap CYAN BOLD "outdated")    Restricts list, or install commands to only outdated npm, brew, and appstore packages."
   echo -e "  $(style_wrap CYAN BOLD "all")         Applies the command to all tracked packages (this is the default behavior when no sub-command is specified).\n"
-
-  msg_header h3 --upper "Special Commands"
-  echo -e "  $(style_wrap CYAN BOLD "help"), $(style_wrap CYAN "--help"), $(style_wrap CYAN "-h") Display comprehensive help."
-  echo -e "  $(style_wrap CYAN BOLD "completions")      Generate shell completion script.\n"
 
   msg_header h3 --upper "Examples"
   echo -e "  $(style_wrap BOLD "brew list")                 Lists all installed formulas and casks."
