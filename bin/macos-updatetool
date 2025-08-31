@@ -31,7 +31,7 @@ LOGO=(
 #   * softwareupdate: Built-in MacOS tool for system updates.
 #
 # Usage:
-#   macos-updatetool <resource-type> [resource-subtype] <command> [sub-command] [pkg-name]
+#   macos-updatetool <resource-type> [resource-subtype] <command> [sub-command] [pkg-name...]
 #
 # Examples:
 #   macos-updatetool brew list
@@ -47,16 +47,23 @@ source "${0:A:h}/styles.zsh"
 source "${0:A:h}/helpers.sh"
 
 # Define the path to the applist file, which should contain the lists of apps to be managed.
-APPLIST="$HOME/.config/macos-updatetool/applist.yaml"
+# Can be overridden by MACOS_UPDATETOOL_CONFIG for testing
+APPLIST="${MACOS_UPDATETOOL_CONFIG:-$HOME/.config/macos-updatetool/applist.yaml}"
 
 # Manages the applist.yaml file.
 # Acceptable categories are: appstore_apps, npm_apps, brew_formulas, brew_casks
 # @param {string} action - The action to perform ('add' or 'remove').
-# @param {string} app_name - The name of the application.
-# @param {string} category - The category ('appstore', 'npm', 'formulas', 'casks').
+# Manages the applist.yaml file with support for multiple packages.
+# Acceptable categories are: appstore, npm, formulas, casks
+# @param {string} action - The action to perform ('add' or 'remove').
+# @param {string} subtype - The category ('appstore', 'npm', 'formulas', 'casks').
+# @param {array} app_names - Array of application names.
 # @returns {number} 0 on success, 1 on error
 manage_applist() {
-  local action="$1" app_name="$2" subtype="$3"
+  local action="$1" subtype="$2"
+  shift 2
+  local -a app_names=("$@")
+  
   local valid_subtypes=("appstore" "npm" "formulas" "casks")
   local key
 
@@ -68,54 +75,110 @@ manage_applist() {
   fi
 
   # Validate subtype
-  if [[ ! " ${valid_subtypes[*]} " =~ " ${subtype} " ]]; then
+  if [[ ! " ${valid_subtypes[*]} " =~  ${subtype}  ]]; then
     echo
     msg_error --color "Invalid subtype '$subtype'. Must be one of: ${valid_subtypes[*]}." >&2
+
+  # Validate we have package names
+  if [[ ${#app_names[@]} -eq 0 ]]; then
+    echo
+    msg_error "No package names provided for '${action}' command." >&2
     return 1
   fi
 
   # Set the YAML key based on the subtype
-  [[ "$subtype" == "formulas" ]] && key="brew_formulas"
-  [[ "$subtype" == "casks" ]] && key="brew_casks"
-  [[ "$subtype" == "npm" ]] && key="npm_apps"
-  [[ "$subtype" == "appstore" ]] && key="appstore_apps"
+  [[ "${subtype}" == "formulas" ]] && key="brew_formulas"
+  [[ "${subtype}" == "casks" ]] && key="brew_casks"
+  [[ "${subtype}" == "npm" ]] && key="npm_apps"
+  [[ "${subtype}" == "appstore" ]] && key="appstore_apps"
 
-  # Existence check (strip quotes from YAML output)
-  if yq ".${key}[]" "$APPLIST" | sed "s/^['\"]//; s/['\"]$//" | grep -Fxq "$app_name"; then
-    if [[ "$action" == "add" ]]; then
-      echo
-      msg_warning "'$app_name' already exists in '$subtype'. Skipping."
-      return 0
+  local -a successful_packages=()
+  local -a skipped_packages=()
+  local -a failed_packages=()
+
+  # Process each package
+  for app_name in "${app_names[@]}"; do
+    # Existence check (strip quotes from YAML output)
+    local exists=false
+    if yq ".${key}[]" "${APPLIST}" | sed "s/^['\"]//; s/['\"]$//" | grep -Fxq "${app_name}"; then
+      exists=true
     fi
-  else
-    if [[ "$action" == "remove" ]]; then
-      echo
-      msg_warning "'$app_name' not found in '$subtype'. Nothing to remove."
-      return 0
+
+    if [[ "${exists}" == true ]]; then
+      if [[ "${action}" == "add" ]]; then
+        skipped_packages+=("${app_name}")
+        continue
+      fi
+    else
+      if [[ "${action}" == "remove" ]]; then
+        skipped_packages+=("${app_name}")
+        continue
+      fi
+    fi
+
+    # Perform action with proper quoting
+    if [[ "${action}" == "add" ]]; then
+      if yq -i '
+        .'"${key}"' += ["'"${app_name}"'"] |
+        .'"${key}"'[-1] style="single"
+      ' "${APPLIST}" 2>/dev/null; then
+        successful_packages+=("${app_name}")
+      else
+        failed_packages+=("${app_name}")
+      fi
+    else
+      if yq -i '
+        del(.'"${key}"'[] | select(. == "'"${app_name}"'"))
+      ' "${APPLIST}" 2>/dev/null; then
+        successful_packages+=("${app_name}")
+      else
+        failed_packages+=("${app_name}")
+      fi
+    fi
+  done
+
+  # Report results
+  echo
+  
+  if [[ ${#successful_packages[@]} -gt 0 ]]; then
+    if [[ ${#successful_packages[@]} -eq 1 ]]; then
+      msg_success "Successfully ${action}ed '${successful_packages[1]}' to ${subtype}."
+    else
+      msg_success "Successfully ${action}ed ${#successful_packages[@]} packages to ${subtype}:"
+      for pkg in "${successful_packages[@]}"; do
+        msg_success --color "  ${pkg}"
+      done
     fi
   fi
 
-  # Perform action with proper quoting
-  if [[ "$action" == "add" ]]; then
-    yq -i '
-      .'"${key}"' += ["'"${app_name}"'"] |
-      .'"${key}"'[-1] style="single"
-    ' "$APPLIST" &&
-      echo
-      msg_success "Added '$app_name' to '$subtype'."
-  else
-    yq -i '
-      del(.'"${key}"'[] | select(. == "'"${app_name}"'"))
-    ' "$APPLIST" &&
-      echo
-      msg_success "Removed '$app_name' from '$subtype'."
+  if [[ ${#skipped_packages[@]} -gt 0 ]]; then
+    if [[ "${action}" == "add" ]]; then
+      local verb="already in"
+      msg_warning "Skipped ${#skipped_packages[@]} package(s) (${verb} ${subtype}):"
+    else
+      msg_warning "Skipped ${#skipped_packages[@]} package(s) (not found in ${subtype}):"
+    fi
+    for pkg in "${skipped_packages[@]}"; do
+      msg_warning --color "  ${pkg}"
+    done
   fi
+
+  if [[ ${#failed_packages[@]} -gt 0 ]]; then
+    msg_error "❌ Failed to ${action} ${#failed_packages[@]} package(s):"
+    for pkg in "${failed_packages[@]}"; do
+      msg_error "  ❌ ${pkg}"
+    done
+    return 1
+  fi
+
+  return 0
 }
 
 # Creates a default applist.yaml file with common applications
 # @returns {number} 0 on success, 1 on error
 create_default_applist() {
-  local applist_dir="$(dirname "$APPLIST")"
+  local applist_dir
+  applist_dir="$(dirname "$APPLIST")"
   
   # Create directory if it doesn't exist
   if [ ! -d "$applist_dir" ]; then
@@ -552,8 +615,9 @@ list_appstore() {
 
   # Get all installed and outdated apps at once with spinner
   local installed_list outdated_list
-  local temp_installed=$(mktemp)
-  local temp_outdated=$(mktemp)
+  local temp_installed temp_outdated
+  temp_installed=$(mktemp)
+  temp_outdated=$(mktemp)
 
   # Fetch installed apps
   show_spinner "Getting installed App Store apps" "mas list > '$temp_installed'"
@@ -1037,7 +1101,7 @@ main() {
       ;;
   esac
 
-  # Parse: macos-updatetool <resource-type> [resource-subtype] <command> [sub-command] [pkg-name]
+  # Parse: macos-updatetool <resource-type> [resource-subtype] <command> [sub-command] [pkg-name...]
   resource_type="$1"
   shift
 
@@ -1093,14 +1157,19 @@ main() {
         resource_subtype="formulas"
       fi
       
-      # Package name is required for add/remove
-      pkg_name="$1"
-      if [[ -z "$pkg_name" ]]; then
+      # Collect all remaining arguments as package names
+      local -a pkg_names=()
+      while [[ $# -gt 0 ]]; do
+        pkg_names+=("$1")
+        shift
+      done
+      
+      # At least one package name is required for add/remove
+      if [[ ${#pkg_names[@]} -eq 0 ]]; then
         echo
-        msg_error "Missing package name for '$command' command"
+        msg_error "Missing package name(s) for '$command' command"
         exit 1
       fi
-      shift
       ;;
     list | install | update)
       # Handle optional sub-command
@@ -1200,7 +1269,7 @@ main() {
     add | remove)
       local target_subtype="$resource_subtype"
       [[ -z "$target_subtype" ]] && target_subtype="$resource_type"
-      manage_applist "$command" "$pkg_name" "$target_subtype"
+      manage_applist "$command" "$target_subtype" "${pkg_names[@]}"
       ;;
   esac
 }
@@ -1214,12 +1283,13 @@ show_logo() {
 # Displays the help message with all available options.
 show_help() {
   # Get description from package.json
-  local description
+  local description name
   description=$(jq -r '.description' < package.json)
+  name=$(jq -r '.name' < package.json)
   show_version
   style_wrap ITALIC M "\n${description}\n"
   msg_header h3 --upper "Usage"
-  echo -e "  $(style_wrap BOLD "${name} <resource-type> [resource-subtype] <command> [sub-command] [pkg-name]")\n"
+  echo -e "  $(style_wrap BOLD "${name} <resource-type> [resource-subtype] <command> [sub-command] [pkg-name...]")\n"
 
   msg_header h3 --upper "Global Options"
   echo -e "  $(style_wrap CYAN BOLD "-h, --help")    Show this help message."
@@ -1244,8 +1314,8 @@ show_help() {
   echo -e "  $(style_wrap CYAN BOLD "list")        Display packages and their current version/installation status."
   echo -e "  $(style_wrap CYAN BOLD "install")     Install specified or all tracked packages."
   echo -e "  $(style_wrap CYAN BOLD "update")      Update specified or all tracked packages."
-  echo -e "  $(style_wrap CYAN BOLD "add")         Add a package to the configuration file for tracking."
-  echo -e "  $(style_wrap CYAN BOLD "remove")      Remove a package from the configuration file.\n"
+  echo -e "  $(style_wrap CYAN BOLD "add")         Add one or more packages to the configuration file for tracking."
+  echo -e "  $(style_wrap CYAN BOLD "remove")      Remove one or more packages from the configuration file.\n"
 
   msg_header h3 --upper "Sub-Commands"
   echo -e "  $(style_wrap CYAN BOLD "outdated")    Restricts list, or install commands to only outdated npm, brew, and appstore packages."
@@ -1258,14 +1328,20 @@ show_help() {
   echo -e "  $(style_wrap BOLD "system list")               Shows status of system and Xcode command-line tools."
   echo -e "  $(style_wrap BOLD "npm update outdated")       Updates all outdated global npm packages."
   echo -e "  $(style_wrap BOLD "all update")                Updates all resources, prompting for confirmation."
-  echo -e "  $(style_wrap BOLD "all list outdated")         Lists only outdated packages from npm, brew, and appstore.\n"
+  echo -e "  $(style_wrap BOLD "all list outdated")         Lists only outdated packages from npm, brew, and appstore."
+  echo -e "  $(style_wrap BOLD "brew add git curl jq")      Adds multiple formulas to configuration."
+  echo -e "  $(style_wrap BOLD "brew casks add firefox chrome") Adds multiple casks to configuration."
+  echo -e "  $(style_wrap BOLD "npm add typescript nodemon") Adds multiple npm packages to configuration.\n"
 
   msg_header h3 --upper "Notes"
   echo -e "  • The $(style_wrap BOLD "add") and $(style_wrap BOLD "remove") commands must apply only to $(style_wrap BOLD "brew"), $(style_wrap BOLD "npm"), and $(style_wrap BOLD "appstore") resources."
   echo -e "  • For $(style_wrap BOLD "brew add") or $(style_wrap BOLD "brew remove") commands, the resource-subtype is optional and defaults to $(style_wrap BOLD "formulas") when omitted."
   echo -e "    Examples:"
-  echo -e "    $(style_wrap BOLD "${name} brew add git") (defaults to formulas)"
+  echo -e "    $(style_wrap BOLD "${name} brew add git") (single formula)"
+  echo -e "    $(style_wrap BOLD "${name} brew add git node bats-core") (multiple formulas)"
   echo -e "    $(style_wrap BOLD "${name} brew casks add visual-studio-code")"
+  echo -e "    $(style_wrap BOLD "${name} brew casks add firefox chrome docker") (multiple casks)"
+  echo -e "    $(style_wrap BOLD "${name} npm add eslint typescript jest") (multiple npm packages)"
   echo -e "  • For $(style_wrap BOLD "list"), $(style_wrap BOLD "install"), and $(style_wrap BOLD "update") commands on the $(style_wrap BOLD "brew") resource, the resource-subtype is optional."
   echo -e "    If omitted, the command applies to both $(style_wrap BOLD "casks") and $(style_wrap BOLD "formulas")."
   echo -e "  • The $(style_wrap BOLD "outdated") sub-command does not apply to $(style_wrap BOLD "xcode") or $(style_wrap BOLD "system") resources."
@@ -1288,7 +1364,7 @@ _macos-updatetool() {
     local -a resource_types brew_subtypes help_options
     local -a all_commands limited_commands sub_commands
     resource_types=('brew:Manages Homebrew formulas and casks' 'npm:Manages global NPM packages' 'appstore:Manages Mac App Store applications' 'xcode:Manages updating Xcode' 'system:Manages macOS system updates and Xcode command-line tools' 'all:Represents all supported resource types')
-    all_commands=('list:Display packages and their current version/installation status' 'install:Install specified or all tracked packages' 'update:Update specified or all tracked packages' 'add:Add a package to the configuration file for tracking' 'remove:Remove a package from the configuration file')
+    all_commands=('list:Display packages and their current version/installation status' 'install:Install specified or all tracked packages' 'update:Update specified or all tracked packages' 'add:Add one or more packages to the configuration file for tracking' 'remove:Remove one or more packages from the configuration file')
     limited_commands=('list:Display packages and their current version/installation status' 'install:Install specified or all tracked packages' 'update:Update specified or all tracked packages')
     sub_commands=('outdated:Restricts list, or install commands to only outdated packages' 'all:Applies the command to all tracked packages')
     brew_subtypes=('casks:Homebrew casks' 'formulas:Homebrew formulas')
@@ -1298,7 +1374,8 @@ _macos-updatetool() {
       '1: :->resource_type' \
       '2: :->second_arg' \
       '3: :->third_arg' \
-      '4: :->fourth_arg'
+      '4: :->fourth_arg' \
+      '*: :->additional_args'
 
     case $state in
       resource_type)
@@ -1340,7 +1417,7 @@ _macos-updatetool() {
                   ;;
               esac
               ;;
-            add|remove) _describe 'pkg-name' ;;
+            add|remove) _message 'package-name (multiple packages supported)' ;;
           esac
         fi
         ;;
@@ -1348,8 +1425,26 @@ _macos-updatetool() {
         # If the third argument was a command (because the second was a brew subtype)
         case $words[4] in
           list|install|update) _describe 'sub-command' sub_commands ;;
-          add|remove) _describe 'pkg-name' ;;
+          add|remove) _message 'package-name (multiple packages supported)' ;;
         esac
+        ;;
+      additional_args)
+        # For add/remove commands, continue suggesting package names
+        local cmd_found=false
+        local cmd_pos=0
+        
+        # Find if add or remove command is present
+        for ((i=2; i<=${#words[@]}; i++)); do
+          if [[ "${words[i]}" == "add" || "${words[i]}" == "remove" ]]; then
+            cmd_found=true
+            cmd_pos=$i
+            break
+          fi
+        done
+        
+        if [[ $cmd_found == true ]]; then
+          _message 'additional-package-name'
+        fi
         ;;
     esac
 }
