@@ -264,43 +264,6 @@ check_dependencies() {
   msg_success "Dependencies check OK."
 }
 
-
-
-
-
-
-# Wrapper function for 'brew upgrade'.
-# It prints a header and then executes the brew upgrade command.
-br_upgrade() {
-  printf "🚀 Running: brew upgrade %s\n\n" "$*"
-  brew -v upgrade $1 $2 $3 $4 $5 $6; _hr
-}
-
-# Wrapper function for 'brew install'.
-# It prints a header and then executes the brew install command.
-br_install() {
-  printf "🚀 Running: brew install %s\n\n" "$*"
-  brew -v install $1 $2 $3 $4 $5 $6; _hr
-}
-
-# Generic command runner.
-# It prints the command being run and then executes it using eval.
-cmd_run() {
-  printf "🚀 Running: %s\n\n" "$*"
-  eval "$1 $2 $3 $4 $5 $6"; _hr
-}
-
-# Prints a horizontal rule to visually separate sections of the output.
-_hr() {
-  echo -e "\n\e[1;34m$(printf '%*s\n\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' -)\e[0m\n"
-}
-
-
-
-
-
-
-
 # Checks if App Store apps need updates and upgrades them
 # @returns {number} 0 on success, 1 on error
 update_appstore() {
