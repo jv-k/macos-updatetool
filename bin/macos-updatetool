@@ -267,8 +267,10 @@ update_appstore() {
   show_spinner "  Updating $(style_wrap GREEN "mas")" "brew -v upgrade mas"
   echo
 
+  local counter=1
   for app in "${appstore_apps[@]}"; do
-    show_spinner "  Updating $(style_wrap GREEN "${app}")" "mas upgrade \"${app}\""
+    show_spinner "  $(style_wrap DIM "${counter}/${#appstore_apps[@]}") Updating $(style_wrap GREEN "${app}")" "mas upgrade \"${app}\""
+    ((counter++))
   done
 
   # FINISH UP: Check for any remaining outdated apps and system updates.
@@ -297,8 +299,10 @@ install_appstore_apps() {
   appstore_apps=("${(@f)$(yq -r '.appstore_apps[]' "$APPLIST")}")
   msg_header --underline --upper "Installing App Store apps" "(${#appstore_apps[@]}):"
   echo
+  local counter=1
   for app in "${appstore_apps[@]}"; do
-    show_spinner "  Installing $(style_wrap GREEN "${app}")" "mas install \"${app}\""
+    show_spinner "  $(style_wrap DIM "${counter}/${#appstore_apps[@]}") Installing $(style_wrap GREEN "${app}")" "mas install \"${app}\""
+    ((counter++))
   done
 }
 
@@ -312,8 +316,10 @@ update_npm() {
   # Update npm itself
   show_spinner "  Updating $(style_wrap GREEN "npm") itself" "npm update -g npm"
   echo
+  local counter=1
   for app in "${npm_apps[@]}"; do
-    show_spinner "  Updating $(style_wrap GREEN "${app}")" "npm update -g \"${app}\""
+    show_spinner "  $(style_wrap DIM "${counter}/${#npm_apps[@]}") Updating $(style_wrap GREEN "${app}")" "npm update -g \"${app}\""
+    ((counter++))
   done
   
   # FINISH UP: Run npm doctor to check for any issues.
@@ -328,8 +334,10 @@ install_npm_apps() {
   npm_apps=("${(@f)$(yq -r '.npm_apps[]' "$APPLIST")}")
   msg_header --underline --upper "Installing NPM apps" "(${#npm_apps[@]}):"
   echo
+  local counter=1
   for app in "${npm_apps[@]}"; do
-    show_spinner "Installing $(style_wrap GREEN "${app}")" "npm install -g \"${app}\""
+    show_spinner "$(style_wrap DIM "${counter}/${#npm_apps[@]}") Installing $(style_wrap GREEN "${app}")" "npm install -g \"${app}\""
+    ((counter++))
   done
   # FINISH UP: Run npm doctor to check for any issues.
   # ---------
@@ -345,8 +353,10 @@ update_formulas() {
   echo
   show_spinner "Updating Homebrew" "brew update"
   echo
+  local counter=1
   for app in "${brew_apps[@]}"; do
-  	show_spinner "Upgrading $(style_wrap GREEN "${app}")" "brew upgrade \"${app}\""
+  	show_spinner "$(style_wrap DIM "${counter}/${#brew_apps[@]}") Upgrading $(style_wrap GREEN "${app}")" "brew upgrade \"${app}\""
+  	((counter++))
   done
   # FINISH UP: Run brew doctor
   echo
@@ -362,8 +372,10 @@ install_formulas() {
   echo
   show_spinner "Updating Homebrew" "brew update"
   echo
+  local counter=1
   for app in "${brew_apps[@]}"; do
-  	show_spinner "Installing $(style_wrap GREEN "${app}")" "brew install \"${app}\""
+  	show_spinner "$(style_wrap DIM "${counter}/${#brew_apps[@]}") Installing $(style_wrap GREEN "${app}")" "brew install \"${app}\""
+  	((counter++))
   done
   # FINISH UP: Run brew doctor
   echo
@@ -382,8 +394,10 @@ update_casks() {
   
   show_spinner "Updating Homebrew" "brew update"
   echo
+  local counter=1
   for app in "${cask_apps[@]}";  do
-  	show_spinner "Upgrading $(style_wrap GREEN "${app}")" "brew upgrade --cask \"${app}\""
+  	show_spinner "$(style_wrap DIM "${counter}/${#cask_apps[@]}") Upgrading $(style_wrap GREEN "${app}")" "brew upgrade --cask \"${app}\""
+  	((counter++))
   done
   # FINISH UP: Run brew doctor
   echo
@@ -398,8 +412,10 @@ install_casks() {
   msg_header --underline --upper "Installing Brew Casks" "(${#cask_apps[@]}):"
   echo
   
+  local counter=1
   for app in "${cask_apps[@]}"; do
-  	show_spinner "Installing $(style_wrap GREEN "${app}")" "brew install --cask \"${app}\""
+  	show_spinner "$(style_wrap DIM "${counter}/${#cask_apps[@]}") Installing $(style_wrap GREEN "${app}")" "brew install --cask \"${app}\""
+  	((counter++))
   done
   # FINISH UP: Run brew doctor
   echo
