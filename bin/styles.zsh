@@ -74,16 +74,16 @@ typeset -A STYLE=(
 style_chain() {
   local codes=()
   for style in "$@"; do
-    local code="${STYLE[$style]}"
+    local code="${STYLE[${style}]}"
     # Extract numeric codes from \e[XXXm format
-    if [[ $code =~ $'\\e\\[([0-9;]+)m' ]]; then
+    if [[ ${code} =~ $'\\e\\[([0-9;]+)m' ]]; then
       local extracted_codes="${match[1]}"
       # Split by semicolon and filter out reset codes (0) to avoid canceling formatting
       local -a code_parts=(${(s:;:)extracted_codes})
       for part in "${code_parts[@]}"; do
         # Skip reset codes (0) to avoid canceling previous formatting
-        if [[ $part != "0" ]]; then
-          codes+=($part)
+        if [[ ${part} != "0" ]]; then
+          codes+=(${part})
         fi
       done
     fi
@@ -101,10 +101,10 @@ style_chain() {
 style_wrap() {
   local n=${#@}
   local styles=("${@:1:$((n-1))}")
-  local text="${@[$n]}"
+  local text="${@[${n}]}"
   local out=""
   for style in "${styles[@]}"; do
-    out+="${STYLE[$style]}"
+    out+="${STYLE[${style}]}"
   done
   echo -e "${out}${text}${STYLE[RESET]}"
 }
@@ -154,7 +154,7 @@ style_demo() {
   )
 
   for style in "${STYLE_ORDER[@]}"; do
-    echo -e "${STYLE[$style]}This is ${style}${STYLE[RESET]}"
+    echo -e "${STYLE[${style}]}This is ${style}${STYLE[RESET]}"
   done
 }
 

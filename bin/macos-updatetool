@@ -191,7 +191,7 @@ create_default_applist() {
   fi
 
   # Create default applist.yaml
-  cat > "${APPLIST}" << 'EOF'
+  if cat > "${APPLIST}" << 'EOF'
 ---
 # macOS Application and Package List
 # This file defines the apps and packages to be managed by macos-updatetool
@@ -218,8 +218,7 @@ brew_casks:
 #  - 'warp'
 #  - 'iterm2'
 EOF
-
-  if [ $? -eq 0 ]; then
+  then
     msg_success "  Created default applist.yaml at: ${APPLIST}\n"
     msg_info "  You can now edit this file to customize your application list.\n"
     return 0

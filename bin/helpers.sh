@@ -19,7 +19,7 @@ parse_style_flags() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --color)
-        text_color="$default_color"
+        text_color="${default_color}"
         shift
         ;;
       --bold)
@@ -45,13 +45,13 @@ parse_style_flags() {
   done
   
   # Output variable assignments and remaining args
-  printf "text_color=%q\n" "$text_color"
-  printf "text_styles=%q\n" "$text_styles"
-  printf "text_upper=%q\n" "$text_upper"
+  printf "text_color=%q\n" "${text_color}"
+  printf "text_styles=%q\n" "${text_styles}"
+  printf "text_upper=%q\n" "${text_upper}"
   # Build remaining_args string manually to avoid glob issues
   printf "remaining_args=("
   for arg in "$@"; do
-    printf " %q" "$arg"
+    printf " %q" "${arg}"
   done
   printf " )\n"
 }
@@ -62,12 +62,12 @@ parse_style_flags() {
 # @returns Sets: clean_message, indent_prefix
 parse_message_indent() {
   local message="$1"
-  local clean_message="$message"
+  local clean_message="${message}"
   local indent_prefix=""
   
   # Count leading spaces and extract them in multiples of 2
   local leading_spaces=""
-  while [[ $clean_message == " "* ]]; do
+  while [[ ${clean_message} == " "* ]]; do
     leading_spaces+=" "
     clean_message="${clean_message:1}"
   done
@@ -76,15 +76,15 @@ parse_message_indent() {
   local space_count=${#leading_spaces}
   local indent_count=$((space_count / 2 * 2))  # Round down to nearest even number
   
-  if [[ $indent_count -gt 0 ]]; then
-    indent_prefix=$(printf "%*s" $indent_count "")
+  if [[ ${indent_count} -gt 0 ]]; then
+    indent_prefix=$(printf "%*s" "${indent_count}" "")
     # Remove the processed spaces from message
-    clean_message="${message:$indent_count}"
+    clean_message="${message:${indent_count}}"
   fi
   
   # Output the results
-  printf "clean_message=%q\n" "$clean_message"
-  printf "indent_prefix=%q\n" "$indent_prefix"
+  printf "clean_message=%q\n" "${clean_message}"
+  printf "indent_prefix=%q\n" "${indent_prefix}"
 }
 
 # Helper function to apply text styles dynamically
@@ -99,14 +99,14 @@ apply_text_styles() {
   local text_upper="$4"
   
   # Apply uppercase if requested
-  if [[ -n "$text_upper" ]]; then
+  if [[ -n "${text_upper}" ]]; then
     message="${message:u}"
   fi
   
-  if [[ -n "$text_color" || -n "$text_styles" ]]; then
+  if [[ -n "${text_color}" || -n "${text_styles}" ]]; then
     echo -e "${text_color}${text_styles}${message}${STYLE[RESET]}"
   else
-    echo -e "$message"
+    echo -e "${message}"
   fi
 }
 
@@ -127,12 +127,12 @@ msg_info() {
   
   # Parse style flags
   eval "$(parse_style_flags "${STYLE[CYAN]}" "$@")"
-  message="$remaining_args"
+  message="${remaining_args}"
   
   # Parse indentation from message
-  eval "$(parse_message_indent "$message")"
+  eval "$(parse_message_indent "${message}")"
   
-  echo -e "$indent_prefix$(style_wrap CYAN "${SYMBOL[INFO]}") $(apply_text_styles "$text_color" "$text_styles" "${clean_message## }" "$text_upper")"
+  echo -e "${indent_prefix}$(style_wrap CYAN "${SYMBOL[INFO]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
 # @param {string} [level=h1] - Header level (h1-h6), optional, defaults to h1
@@ -171,16 +171,16 @@ msg_header() {
   fi
   
   # Convert escape sequences to actual characters before processing
-  styled_text=$(printf "%b" "$styled_text")
+  styled_text=$(printf "%b" "${styled_text}")
   
   # Handle indentation for styled text using the new helper
   local clean_message="" indent_prefix=""
-  eval "$(parse_message_indent "$styled_text")"
-  styled_text="$clean_message"
-  indent="$indent_prefix"
+  eval "$(parse_message_indent "${styled_text}")"
+  styled_text="${clean_message}"
+  indent="${indent_prefix}"
   
   # Apply uppercase if requested
-  if [[ -n "$text_upper" ]]; then
+  if [[ -n "${text_upper}" ]]; then
     styled_text="${styled_text:u}"
   fi
   
@@ -188,15 +188,15 @@ msg_header() {
   local header_style="${STYLE[${header_level:u}]}${text_styles}"
   
   # Build the output with proper newline handling
-  local output="$indent${header_style}${styled_text## }${STYLE[RESET]}"
+  local output="${indent}${header_style}${styled_text## }${STYLE[RESET]}"
   
   # Add default text if provided
-  if [[ -n "$default_text" ]]; then
+  if [[ -n "${default_text}" ]]; then
     output+=" ${default_text}"
   fi
   
   # Use printf to properly handle escape sequences instead of echo -e
-  printf "%b\n" "$output"
+  printf "%b\n" "${output}"
 }
 
 # @param --color - Optional flag to make the entire message text colored
@@ -215,14 +215,14 @@ msg_muted() {
   
   # Parse style flags
   eval "$(parse_style_flags "${STYLE[HI_BLACK]}" "$@")"
-  message="$remaining_args"
+  message="${remaining_args}"
   
   # Parse indentation from message
-  eval "$(parse_message_indent "$message")"
+  eval "$(parse_message_indent "${message}")"
   
   # Create combined style with HI_BLACK as base
   local combined_style="${STYLE[HI_BLACK]}${text_color}${text_styles}"
-  echo -e "$indent_prefix$(apply_text_styles "$combined_style" "" "${clean_message## }" "$text_upper")"
+  echo -e "${indent_prefix}$(apply_text_styles "${combined_style}" "" "${clean_message## }" "${text_upper}")"
 }
 
 # @param --color - Optional flag to make the entire message text colored
@@ -241,12 +241,12 @@ msg_success() {
   
   # Parse style flags
   eval "$(parse_style_flags "${STYLE[GREEN]}" "$@")"
-  message="$remaining_args"
+  message="${remaining_args}"
   
   # Parse indentation from message
-  eval "$(parse_message_indent "$message")"
+  eval "$(parse_message_indent "${message}")"
   
-  echo -e "$indent_prefix$(style_wrap GREEN "${SYMBOL[SUCCESS]}") $(apply_text_styles "$text_color" "$text_styles" "${clean_message## }" "$text_upper")"
+  echo -e "${indent_prefix}$(style_wrap GREEN "${SYMBOL[SUCCESS]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
 # @param --color - Optional flag to make the entire message text colored
@@ -265,12 +265,12 @@ msg_warning() {
   
   # Parse style flags
   eval "$(parse_style_flags "${STYLE[YELLOW]}" "$@")"
-  message="$remaining_args"
+  message="${remaining_args}"
   
   # Parse indentation from message
-  eval "$(parse_message_indent "$message")"
+  eval "$(parse_message_indent "${message}")"
   
-  echo -e "$indent_prefix$(style_wrap YELLOW "${SYMBOL[WARNING]}") $(apply_text_styles "$text_color" "$text_styles" "${clean_message## }" "$text_upper")"
+  echo -e "${indent_prefix}$(style_wrap YELLOW "${SYMBOL[WARNING]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
 # @param --color - Optional flag to make the entire message text colored
@@ -289,12 +289,12 @@ msg_error() {
   
   # Parse style flags
   eval "$(parse_style_flags "${STYLE[RED]}" "$@")"
-  message="$remaining_args"
+  message="${remaining_args}"
   
   # Parse indentation from message
-  eval "$(parse_message_indent "$message")"
+  eval "$(parse_message_indent "${message}")"
   
-  echo -e "$indent_prefix$(style_wrap RED "${SYMBOL[DANGER]}") $(apply_text_styles "$text_color" "$text_styles" "${clean_message## }" "$text_upper")"
+  echo -e "${indent_prefix}$(style_wrap RED "${SYMBOL[DANGER]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
 # @param --color - Optional flag to make the entire message text colored
@@ -313,12 +313,12 @@ msg_bullet() {
   
   # Parse style flags
   eval "$(parse_style_flags "${STYLE[PURPLE]}" "$@")"
-  message="$remaining_args"
+  message="${remaining_args}"
   
   # Parse indentation from message
-  eval "$(parse_message_indent "$message")"
+  eval "$(parse_message_indent "${message}")"
   
-  echo -e "$indent_prefix$(style_wrap PURPLE "${SYMBOL[BULLET]}") $(apply_text_styles "$text_color" "$text_styles" "${clean_message## }" "$text_upper")"
+  echo -e "${indent_prefix}$(style_wrap PURPLE "${SYMBOL[BULLET]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
 # @param --color - Optional flag to make the entire message text colored
@@ -337,12 +337,12 @@ msg_question() {
   
   # Parse style flags
   eval "$(parse_style_flags "${STYLE[YELLOW]}" "$@")"
-  message="$remaining_args"
+  message="${remaining_args}"
   
   # Parse indentation from message
-  eval "$(parse_message_indent "$message")"
+  eval "$(parse_message_indent "${message}")"
   
-  echo -e "$indent_prefix$(style_wrap YELLOW "${SYMBOL[QUESTION]}") $(apply_text_styles "$text_color" "$text_styles" "${clean_message## }" "$text_upper")"
+  echo -e "${indent_prefix}$(style_wrap YELLOW "${SYMBOL[QUESTION]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
 # Shows a spinner while a background command is running
@@ -372,11 +372,11 @@ show_spinner() {
         shift
         ;;
       *)
-        if [[ -z "$message" ]]; then
+        if [[ -z "${message}" ]]; then
           message="$1"
-        elif [[ -z "$command" ]]; then
+        elif [[ -z "${command}" ]]; then
           command="$1"
-        elif [[ -z "$timeout" ]]; then
+        elif [[ -z "${timeout}" ]]; then
           timeout="$1"
         fi
         shift
@@ -385,8 +385,8 @@ show_spinner() {
   done
   
   # Set timeout: use default if not specified, disable if set to 0
-  if [[ -z "$timeout" ]]; then
-    timeout="$default_timeout"
+  if [[ -z "${timeout}" ]]; then
+    timeout="${default_timeout}"
   fi
   
   local spinner_chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
@@ -399,79 +399,79 @@ show_spinner() {
 
   # Handle indentation using the new helper function
   local clean_message="" indent_prefix=""
-  eval "$(parse_message_indent "$message")"
+  eval "$(parse_message_indent "${message}")"
   
   # Calculate output indentation (2 more spaces than spinner indent)
   local output_indent=""
-  if [[ -n "$indent_prefix" ]]; then
+  if [[ -n "${indent_prefix}" ]]; then
     output_indent="${indent_prefix}  "
   fi
 
   # Handle sudo authentication if requested
-  if [[ "$use_sudo" == "true" ]]; then
+  if [[ "${use_sudo}" == "true" ]]; then
     if ! ensure_sudo; then
-      rm -f "$temp_file" "$temp_err"
+      rm -f "${temp_file}" "${temp_err}"
       return 1
     fi
   fi
 
   # Start command in background
-  eval "$command" > "$temp_file" 2> "$temp_err" &
+  eval "${command}" > "${temp_file}" 2> "${temp_err}" &
   pid=$!
 
   # Show spinner while command runs
   local i=0
-  while kill -0 $pid 2>/dev/null; do
+  while kill -0 "${pid}" 2>/dev/null; do
     local spinner_char=${spinner_chars:$((i % ${#spinner_chars})):1}
-    printf "\r${indent_prefix}$(style_wrap CYAN "$spinner_char") $clean_message..."
+    printf "\r${indent_prefix}$(style_wrap CYAN "${spinner_char}") ${clean_message}..."
     sleep 0.1
     ((i++))
     
     # Check for timeout (skip if timeout is 0)
-    if [[ "$timeout" != "0" ]] && [[ $((i / 10)) -gt $timeout ]]; then
-      kill $pid 2>/dev/null
-      printf "\r${indent_prefix}$(style_wrap RED "${SYMBOL[DANGER]}") $clean_message (timed out)\n"
-      rm -f "$temp_file" "$temp_err"
+    if [[ "${timeout}" != "0" ]] && [[ $((i / 10)) -gt ${timeout} ]]; then
+      kill "${pid}" 2>/dev/null
+      printf "\r${indent_prefix}$(style_wrap RED "${SYMBOL[DANGER]}") ${clean_message} (timed out)\n"
+      rm -f "${temp_file}" "${temp_err}"
       return 1
     fi
   done
 
   # Wait for command to finish and get exit code
-  wait $pid
+  wait "${pid}"
   local exit_code=$?
 
   # Clear spinner line and show result
   printf "\r"
-  if [[ $exit_code -eq 0 ]]; then
-    msg_success "${indent_prefix}$clean_message   "
+  if [[ ${exit_code} -eq 0 ]]; then
+    msg_success "${indent_prefix}${clean_message}   "
     # Show output only if requested and there is output
-    if [[ "$show_output" == "true" ]]; then
-      if [[ -n "$output_indent" ]] && [[ -s "$temp_file" ]]; then
-        sed "s/^/$output_indent/" "$temp_file"
-      elif [[ -s "$temp_file" ]]; then
-        cat "$temp_file"
+    if [[ "${show_output}" == "true" ]]; then
+      if [[ -n "${output_indent}" ]] && [[ -s "${temp_file}" ]]; then
+        sed "s/^/${output_indent}/" "${temp_file}"
+      elif [[ -s "${temp_file}" ]]; then
+        cat "${temp_file}"
       fi
     fi
   else
-    msg_error "${indent_prefix}$clean_message failed."
+    msg_error "${indent_prefix}${clean_message} failed."
     # Always show error output (but limit to first line)
-    if [[ -n "$output_indent" ]] && [[ -s "$temp_err" ]]; then
-      if [[ "$show_output" == "true" ]]; then
-        echo -e "${STYLE[YELLOW]}$(sed "s/^/$output_indent/" "$temp_err")${STYLE[RESET]}"
+    if [[ -n "${output_indent}" ]] && [[ -s "${temp_err}" ]]; then
+      if [[ "${show_output}" == "true" ]]; then
+        echo -e "${STYLE[YELLOW]}$(sed "s/^/${output_indent}/" "${temp_err}")${STYLE[RESET]}"
       else
-        echo -e "${STYLE[LIGHT_RED]}$(sed "s/^/$output_indent/" "$temp_err" | head -n 1)${STYLE[RESET]}"
+        echo -e "${STYLE[LIGHT_RED]}$(sed "s/^/${output_indent}/" "${temp_err}" | head -n 1)${STYLE[RESET]}"
       fi
-    elif [[ -s "$temp_err" ]]; then
-      if [[ "$show_output" == "true" ]]; then
-        echo -e "${STYLE[YELLOW]}$(cat "$temp_err")${STYLE[RESET]}"
+    elif [[ -s "${temp_err}" ]]; then
+      if [[ "${show_output}" == "true" ]]; then
+        echo -e "${STYLE[YELLOW]}$(cat "${temp_err}")${STYLE[RESET]}"
       else
-        echo -e "${STYLE[LIGHT_RED]}$(cat "$temp_err" | head -n 1)${STYLE[RESET]}"
+        echo -e "${STYLE[LIGHT_RED]}$(cat "${temp_err}" | head -n 1)${STYLE[RESET]}"
       fi
     fi
   fi
 
-  rm -f "$temp_file" "$temp_err"
-  return $exit_code
+  rm -f "${temp_file}" "${temp_err}"
+  return "${exit_code}"
 }
 
 # Ensures sudo authentication is available for subsequent commands
@@ -503,11 +503,11 @@ confirm() {
   local default_choice="${2:-N}"
   local prompt_suffix
 
-  [[ "$default_choice" =~ ^[Yy]$ ]] && prompt_suffix="[Y/n]" || prompt_suffix="[y/N]"
+  [[ "${default_choice}" =~ ^[Yy]$ ]] && prompt_suffix="[Y/n]" || prompt_suffix="[y/N]"
 
-  msg_question "$question $prompt_suffix"
+  msg_question "${question} ${prompt_suffix}"
   read -r response
 
-  [[ -z "$response" ]] && response="$default_choice"
-  [[ "$response" =~ ^[Yy]$ ]] && return 0 || return 1
+  [[ -z "${response}" ]] && response="${default_choice}"
+  [[ "${response}" =~ ^[Yy]$ ]] && return 0 || return 1
 }
