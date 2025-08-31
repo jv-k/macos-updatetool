@@ -62,12 +62,14 @@ manage_applist() {
 
   # Validate action
   if [[ "$action" != "add" && "$action" != "remove" ]]; then
+    echo
     msg_error "Invalid action '$action' — use 'add' or 'remove'." >&2
     return 1
   fi
 
   # Validate subtype
   if [[ ! " ${valid_subtypes[*]} " =~ " ${subtype} " ]]; then
+    echo
     msg_error --color "Invalid subtype '$subtype'. Must be one of: ${valid_subtypes[*]}." >&2
     return 1
   fi
@@ -81,11 +83,13 @@ manage_applist() {
   # Existence check (strip quotes from YAML output)
   if yq ".${key}[]" "$APPLIST" | sed "s/^['\"]//; s/['\"]$//" | grep -Fxq "$app_name"; then
     if [[ "$action" == "add" ]]; then
+      echo
       msg_warning "'$app_name' already exists in '$subtype'. Skipping."
       return 0
     fi
   else
     if [[ "$action" == "remove" ]]; then
+      echo
       msg_warning "'$app_name' not found in '$subtype'. Nothing to remove."
       return 0
     fi
@@ -97,11 +101,13 @@ manage_applist() {
       .'"${key}"' += ["'"${app_name}"'"] |
       .'"${key}"'[-1] style="single"
     ' "$APPLIST" &&
+      echo
       msg_success "Added '$app_name' to '$subtype'."
   else
     yq -i '
       del(.'"${key}"'[] | select(. == "'"${app_name}"'"))
     ' "$APPLIST" &&
+      echo
       msg_success "Removed '$app_name' from '$subtype'."
   fi
 }
@@ -255,8 +261,8 @@ check_dependencies() {
 # @returns {number} 0 on success, 1 on error
 update_appstore() {
   local -a appstore_apps
-  read -r -d '' -a appstore_apps < <(yq -r '.appstore_apps[]' "$APPLIST" && printf '\0')
-  msg_header --underline --upper "Updating App Store apps" "(${#appstore_apps[@]}):"
+  appstore_apps=("${(@f)$(yq -r '.appstore_apps[]' "$APPLIST")}")
+  msg_header --underline --upper "\nUpdating App Store apps" "(${#appstore_apps[@]}):"
   echo
   show_spinner "  Updating $(style_wrap GREEN "mas")" "brew -v upgrade mas"
   echo
@@ -267,9 +273,19 @@ update_appstore() {
 
   # FINISH UP: Check for any remaining outdated apps and system updates.
   echo
-  show_spinner --show-output "  Check for all outdated $(style_wrap GREEN "App Store") apps" "mas outdated"
-  echo
-  msg_info --italic "    These apps aren't in your applist.yaml and won't be auto-updated."
+  local temp_outdated
+  temp_outdated=$(mktemp)
+  mas outdated > "$temp_outdated" 2>/dev/null
+  
+  if [[ -s "$temp_outdated" ]]; then
+    show_spinner --show-output "  Check for all outdated $(style_wrap GREEN "App Store") apps" "cat \"$temp_outdated\""
+    echo
+    msg_info --italic "    These apps aren't in your applist.yaml and won't be auto-updated."
+  else
+    msg_success "  All App Store apps are up to date!"
+  fi
+  
+  rm -f "$temp_outdated"
   echo
   show_spinner --show-output "  Check for $(style_wrap GREEN "MacOS") updates" "softwareupdate list"
 }
@@ -278,7 +294,7 @@ update_appstore() {
 # @returns {number} 0 on success, 1 on error
 install_appstore_apps() {
   local -a appstore_apps
-  read -r -d '' -a appstore_apps < <(yq -r '.appstore_apps[]' "$APPLIST" && printf '\0')
+  appstore_apps=("${(@f)$(yq -r '.appstore_apps[]' "$APPLIST")}")
   msg_header --underline --upper "Installing App Store apps" "(${#appstore_apps[@]}):"
   echo
   for app in "${appstore_apps[@]}"; do
@@ -290,8 +306,8 @@ install_appstore_apps() {
 # @returns {number} 0 on success, 1 on error
 update_npm() {
   local -a npm_apps
-  read -r -d '' -a npm_apps < <(yq -r '.npm_apps[]' "$APPLIST" && printf '\0')
-  msg_header --underline --upper "Updating NPM apps" "(${#npm_apps[@]}):"
+  npm_apps=("${(@f)$(yq -r '.npm_apps[]' "$APPLIST")}")
+  msg_header --underline --upper "\nUpdating NPM apps" "(${#npm_apps[@]}):"
   echo
   # Update npm itself
   show_spinner "  Updating $(style_wrap GREEN "npm") itself" "npm update -g npm"
@@ -309,7 +325,7 @@ update_npm() {
 # Installs globally installed npm packages.
 install_npm_apps() {
   local -a npm_apps
-  read -r -d '' -a npm_apps < <(yq -r '.npm_apps[]' "$APPLIST" && printf '\0')
+  npm_apps=("${(@f)$(yq -r '.npm_apps[]' "$APPLIST")}")
   msg_header --underline --upper "Installing NPM apps" "(${#npm_apps[@]}):"
   echo
   for app in "${npm_apps[@]}"; do
@@ -324,8 +340,8 @@ install_npm_apps() {
 # Upgrades Homebrew formulas.
 update_formulas() {
   local -a brew_apps
-  read -r -d '' -a brew_apps < <(yq -r '.brew_formulas[]' "$APPLIST" && printf '\0')
-  msg_header --underline --upper "Updating Brew formulas" "(${#brew_apps[@]}):"
+  brew_apps=("${(@f)$(yq -r '.brew_formulas[]' "$APPLIST")}")
+  msg_header --underline --upper "\nUpdating Brew formulas" "(${#brew_apps[@]}):"
   echo
   show_spinner "Updating Homebrew" "brew update"
   echo
@@ -341,7 +357,7 @@ update_formulas() {
 # @returns {number} 0 on success, 1 on error
 install_formulas() {
   local -a brew_apps
-  read -r -d '' -a brew_apps < <(yq -r '.brew_formulas[]' "$APPLIST" && printf '\0')
+  brew_apps=("${(@f)$(yq -r '.brew_formulas[]' "$APPLIST")}")
   msg_header --underline --upper "Installing Brew formulas" "(${#brew_apps[@]}):"
   echo
   show_spinner "Updating Homebrew" "brew update"
@@ -358,8 +374,8 @@ install_formulas() {
 # @returns {number} 0 on success, 1 on error
 update_casks() {
   local -a cask_apps
-  read -r -d '' -a cask_apps < <(yq -r '.brew_casks[]' "$APPLIST" && printf '\0')
-  msg_header --underline --upper "Upgrading Brew Casks" "(${#cask_apps[@]}):"
+  cask_apps=("${(@f)$(yq -r '.brew_casks[]' "$APPLIST")}")
+  msg_header --underline --upper "\nUpgrading Brew Casks" "(${#cask_apps[@]}):"
   echo
   msg_warning --italic "You may need to close the apps for updates to apply."
   echo
@@ -378,7 +394,7 @@ update_casks() {
 # @returns {number} 0 on success, 1 on error
 install_casks() {
   local -a cask_apps
-  read -r -d '' -a cask_apps < <(yq -r '.brew_casks[]' "$APPLIST" && printf '\0')
+  cask_apps=("${(@f)$(yq -r '.brew_casks[]' "$APPLIST")}")
   msg_header --underline --upper "Installing Brew Casks" "(${#cask_apps[@]}):"
   echo
   
@@ -393,7 +409,7 @@ install_casks() {
 # Upgrades Command Line Tools for Xcode
 # @returns {number} 0 on success, 1 on error
 update_xcode_tools() {
-  msg_header --underline --upper "\Updating Xcode Command Line Tools:"
+  msg_header --underline --upper "\nUpdating Xcode Command Line Tools:"
   echo
   
   # Check if Command Line Tools are installed
@@ -508,8 +524,8 @@ install_xcode() {
 # @param {boolean} show_outdated - Whether to show only outdated packages
 list_appstore() {
   local show_outdated="$1"
-  local -a appstore_apps=($(yq -r '.appstore_apps[]' "$APPLIST"))
-  
+  local -a appstore_apps
+  appstore_apps=("${(@f)$(yq -r '.appstore_apps[]' "$APPLIST")}")
   msg_header --underline --upper "\nShowing App Store Apps" "(${#appstore_apps[@]}):\n"
 
   # Check if there are any appstore apps defined
@@ -597,8 +613,8 @@ list_appstore() {
 # @param {boolean} show_outdated - Whether to show only outdated packages
 list_npm() {
   local show_outdated="$1"
-  local -a npm_apps=($(yq -r '.npm_apps[]' "$APPLIST"))
-
+  local -a npm_apps
+  npm_apps=("${(@f)$(yq -r '.npm_apps[]' "$APPLIST")}")
   msg_header --underline --upper "\nShowing NPM Packages" "(${#npm_apps[@]}):\n"
 
   # Check if there are any npm packages defined
@@ -609,8 +625,10 @@ list_npm() {
 
   # Get all npm packages info with spinners
   local installed_list outdated_list
-  local temp_installed=$(mktemp)
-  local temp_outdated=$(mktemp)
+  local temp_installed
+  local temp_outdated
+  temp_outdated=$(mktemp)
+  temp_installed=$(mktemp)
 
   # Fetch installed packages
   show_spinner "Getting installed npm packages" "npm list -g > '$temp_installed'"
@@ -693,9 +711,9 @@ list_brew() {
   # Determine which app list to use and set appropriate variables
   local -a brew_apps
   if [[ "$package_type" == "cask" ]]; then
-    brew_apps=($(yq -r '.brew_casks[]' "$APPLIST"))
+    brew_apps=("${(@f)$(yq -r '.brew_casks[]' "$APPLIST")}")
   else
-    brew_apps=($(yq -r '.brew_formulas[]' "$APPLIST"))
+    brew_apps=("${(@f)$(yq -r '.brew_formulas[]' "$APPLIST")}")
   fi
 
   local app_key
@@ -713,8 +731,10 @@ list_brew() {
 
   # Get outdated packages info with spinner
   local outdated_apps installed_apps
-  local temp_outdated=$(mktemp)
-  local temp_installed=$(mktemp)
+  local temp_outdated
+  local temp_installed
+  temp_outdated=$(mktemp)
+  temp_installed=$(mktemp)
 
   # Fetch outdated packages
   show_spinner "Checking for outdated ${package_type}s" "brew outdated --${package_type} > '$temp_outdated'"
