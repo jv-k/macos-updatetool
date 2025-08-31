@@ -494,3 +494,20 @@ ensure_sudo() {
     return 1
   fi
 }
+
+# @param {string} question - The confirmation question to ask the user.
+# @param {string} [default_choice=N] - The default choice if the user just presses Enter.
+# @returns {number} 0 if the user confirms (yes), 1 if they decline (no).
+confirm() {
+  local question="$1"
+  local default_choice="${2:-N}"
+  local prompt_suffix
+
+  [[ "$default_choice" =~ ^[Yy]$ ]] && prompt_suffix="[Y/n]" || prompt_suffix="[y/N]"
+
+  msg_question "$question $prompt_suffix"
+  read -r response
+
+  [[ -z "$response" ]] && response="$default_choice"
+  [[ "$response" =~ ^[Yy]$ ]] && return 0 || return 1
+}

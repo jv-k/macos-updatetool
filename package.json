@@ -1,7 +1,7 @@
 {
   "name": "macos-updatetool",
   "version": "0.1.0",
-  "description": "A CLI tool that manages apps and packages on macOS. It handles Homebrew, npm, App Store apps, and Xcode components.",
+  "description": "macos-updatetool is a CLI workflow tool designed to make updating essential resources important for developers working in a macOS environment frictionless. It handles Homebrew, npm, App Store apps, as well as Xcode resource types.",
   "main": "bin/macos-updatetool",
   "bin": {
     "macos-updatetool": "./bin/macos-updatetool"
@@ -9,7 +9,7 @@
   "scripts": {
     "checkshell": "zsh -n ./bin/macos-updatetool",
     "install": "echo 'Setting up macos-updatetool...'",
-    "postinstall": "echo 'macos-updatetool installed successfully! Run: macos-updatetool --help'"
+    "postinstall": "echo 'macos-updatetool installed successfully! Run: macos-updatetool help'"
   },
   "keywords": [
     "macos",
@@ -34,7 +34,7 @@
   "bugs": {
     "url": "https://github.com/jv-k/macos-updatetool/issues"
   },
-  "homepage": "https://github.com/jv-k/macos-updatetool#readme",
+  "homepage": "https://github.com/jv-k/macos-updatetool",
   "preferGlobal": true,
   "files": [
     "bin/",
