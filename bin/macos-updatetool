@@ -616,7 +616,7 @@ list_appstore() {
   fi
 
   # Get all installed and outdated apps at once with spinner
-  local installed_list outdated_list
+  local installed_list outdated_list outdated_success
   local temp_installed
   local temp_outdated
   temp_outdated=$(mktemp)
@@ -628,7 +628,7 @@ list_appstore() {
   rm -f "${temp_installed}"
 
   # Fetch outdated apps
-  show_spinner "Checking for outdated App Store apps" "mas outdated > '${temp_outdated}'"
+  show_spinner "Checking for outdated App Store apps" "mas outdated > '${temp_outdated}'" && outdated_success=true || outdated_success=false
   outdated_list=$(cat "${temp_outdated}")
   rm -f "${temp_outdated}"
 
@@ -690,6 +690,12 @@ list_appstore() {
       msg_error --italic "  ${package}"
     done
   fi
+  
+  # Show troubleshooting message if outdated check failed
+  if [[ "${outdated_success}" != true ]]; then
+    echo
+    msg_warning --color "  App Store outdated check failed. For more info run: $(style_wrap RESET BOLD "mas account") / $(style_wrap BOLD "mas outdated")"
+  fi
 }
 
 # Lists npm packages with status
@@ -707,9 +713,10 @@ list_npm() {
   fi
 
   # Get all npm packages info with spinners
-  local installed_list outdated_list
+  local installed_list outdated_list outdated_success
   local temp_installed
   local temp_outdated
+  outdated_success=false
   temp_outdated=$(mktemp)
   temp_installed=$(mktemp)
 
@@ -719,7 +726,7 @@ list_npm() {
   rm -f "${temp_installed}"
 
   # Fetch outdated packages
-  show_spinner "Checking for outdated npm packages" "npm outdated -g > '${temp_outdated}'"
+   show_spinner "Checking for outdated npm packages" "npm outdated -g > '${temp_outdated}'" && outdated_success=true
   outdated_list=$(cat "${temp_outdated}")
   rm -f "${temp_outdated}"
 
@@ -781,7 +788,14 @@ list_npm() {
     for package in "${not_installed_packages[@]}"; do
       msg_error --italic "  ${package}"
     done
-  fi  
+  fi
+  
+  # Show troubleshooting message if outdated check failed
+  # Show troubleshooting message if outdated check failed
+  if [[ "${outdated_success}" != true ]]; then
+    echo
+    msg_warning --color "  Npm outdated check failed. For more info run: $(style_wrap RESET BOLD "npm doctor") / $(style_wrap bold "npm outdated -g")"
+  fi
 }
 
 # Lists brew formulas and casks with status
@@ -813,14 +827,14 @@ list_brew() {
   fi
 
   # Get outdated packages info with spinner
-  local outdated_apps installed_apps
+  local outdated_apps installed_apps outdated_success
   local temp_outdated
   local temp_installed
   temp_outdated=$(mktemp)
   temp_installed=$(mktemp)
 
   # Fetch outdated packages
-  show_spinner "Checking for outdated ${package_type}s" "brew outdated --${package_type} > '${temp_outdated}'"
+  show_spinner "Checking for outdated ${package_type}s" "brew outdated --${package_type} > '${temp_outdated}'" && outdated_success=true || outdated_success=false
   outdated_apps=$(cat "${temp_outdated}")
   rm -f "${temp_outdated}"
 
@@ -923,6 +937,12 @@ list_brew() {
     for package in "${not_installed_packages[@]}"; do
       msg_error --italic "  ${package}"
     done
+  fi
+  
+  # Show troubleshooting message if outdated check failed
+  if [[ "${outdated_success}" != true ]]; then
+    echo
+    msg_warning --color "  Brew outdated check failed. For more info run: $(style_wrap RESET BOLD "brew doctor") / $(style_wrap BOLD "brew outdated")"
   fi
 }
 
