@@ -7,14 +7,13 @@
     "macos-updatetool": "./bin/macos-updatetool"
   },
   "scripts": {
-    "checkshell": "zsh -n ./bin/macos-updatetool",
     "install": "echo 'Setting up macos-updatetool...'",
-    "postinstall": "echo 'macos-updatetool installed successfully! Run: macos-updatetool help'"
-    "lint": "shellcheck -s bash bin/macos-updatetool",
-    "lint:fix": "shellcheck -s bash -f diff bin/macos-updatetool",
-    "lint:fix:patch": "shellcheck -s bash -f diff bin/macos-updatetool | git apply",
-    "lint:shellcheck": "shellcheck -s zsh bin/macos-updatetool",
-    "lint:syntax": "zsh -n bin/macos-updatetool",
+    "postinstall": "echo 'macos-updatetool installed successfully! Run: macos-updatetool help'",
+    "checkshell": "zsh -n ./bin/*",
+    "lint": "shellcheck -s bash ./bin/*",
+    "lint:fix": "shellcheck -s bash -f diff ./bin/*",
+    "lint:fix:patch": "shellcheck -s bash -f diff ./bin/* | sed 's|\\./||g' | git apply",
+    "lint:syntax": "zsh -n ./bin/*",
   },
   "keywords": [
     "macos",
@@ -29,6 +28,10 @@
   ],
   "author": "John Valai <git@jvk.to>",
   "license": "MIT",
+  "devDependencies": {
+    "js-yaml": "^4.1.0",
+    "ajv": "^8.12.0"
+  },
   "os": [
     "darwin"
   ],

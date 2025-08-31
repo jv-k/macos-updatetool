@@ -1,34 +1,38 @@
 # TODO
 
-## Features to Add
+## High Priority Features
 
 - [ ] **Backup/restore**: Create backups of current package states
 - [ ] **Selective updates**: Interactive mode to choose which packages to update
-- [ ] **Parallel processing**: Run multiple package managers simultaneously
 - [ ] **Dry run mode**: Show what would be updated without making changes
-- [ ] **Custom package sources**: Support for additional package managers
-- [ ] **Update scheduling**: Cron-like scheduling for automatic updates
 - [ ] **Rollback capability**: Undo recent package changes
 - [ ] **Python system-wide package support**: Add support for pip packages
   - [ ] **List installed packages**: Show all installed pip packages
   - [ ] **Update packages**: Update all or specific pip packages
   - [ ] **Install packages**: Install new pip packages from requirements.txt
 
-## Improvements
+## Medium Priority Features
 
 - [ ] **Performance**: Cache package information to reduce API calls
-- [ ] **Logging**: Optional detailed logging to file
 - [ ] **Configuration management**: Multiple config file support
-- [ ] **Dependency resolution**: Handle package dependencies intelligently
+- [ ] **Custom package sources**: Support for additional package managers
+- [ ] **Parallel processing**: Run multiple package managers simultaneously
+- [ ] **Update scheduling**: Cron-like scheduling for automatic updates
 - [ ] **Package name completion**: Tab complete actual package names for add/remove commands
 
-## Code Quality
+## Code Quality & Development
 
 - [ ] **Testing**: Add unit tests for all functions
-- [ ] **Documentation**: Add JSDoc comments throughout
-- [ ] **Linting**: Add shellcheck and other linters
+- [x] **Linting**: Add shellcheck linting with pnpm scripts
+- [x] **Auto-fix capability**: Added automated shellcheck fix application
+- [x] **Development scripts**: Added lint helpers, auto-fix, and validation scripts
 - [ ] **CI/CD**: GitHub Actions for testing and releases
+- [ ] **Documentation**: Add JSDoc comments throughout
 - [ ] **Modularization**: Split large functions into smaller modules
+
+## Performance & Configuration
+
+- [ ] **Logging**: Optional detailed logging to file
 
 ## Platform Support
 
@@ -36,7 +40,19 @@
 - [ ] **Windows support**: Add support for Windows package managers
 - [ ] **Cross-platform config**: Unified config format across platforms
 
-## Completed
+## Recently Completed ✅
+
+- [x] **Multiple package support**: Added ability to add/remove multiple packages in single commands
+- [x] **Advanced linting and validation**:
+  - [x] Shellcheck integration with bash compatibility mode
+  - [x] Automated fix application with `lint:fix:patch`
+  - [x] Zsh syntax validation
+  - [x] Multiple helper scripts for linting and fixing
+- [x] **Configuration validation**: JSON schema validation with ajv
+- [x] **Documentation improvements**: Added detailed technical articles
+- [x] **Development workflow**: Added setup scripts and development helpers
+
+## Previously Completed
 
 - [x] Extract shared logic from list functions
 - [x] Move Xcode functions to dedicated modules
@@ -59,4 +75,3 @@
 - [x] **Package search**: Can search/list packages across all sources with comprehensive filtering
 - [x] **Error handling**: Significantly improved error messages with clear usage guidance and styling
 - [x] **Progress indicators**: Added detailed package counters (1/43 style) for all update/install operations
-- [x] **Package grouping**: Organized packages by resource types with proper categorization

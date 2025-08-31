@@ -1,227 +1,310 @@
 # macos-updatetool
 
-A comprehensive macOS package and app management tool that automates the installation and updating of applications from multiple sources using a modern, resource-centric CLI interface.
+A comprehensive CLI tool that tracks and manages apps and packages on macOS from multiple sources including Homebrew, npm, Mac App Store, Xcode, and system updates.
 
 ## Features
 
-- **Multi-source support**: Manages apps from Homebrew (formulas & casks), npm, Mac App Store, Xcode, and system updates
-- **Modern CLI interface**: Resource-centric syntax with consistent command patterns
-- **Status checking**: Lists all packages with clear status indicators (✔ up-to-date, ! outdated, ✖ not installed)
-- **Bulk operations**: Install or update all packages at once or by category
-- **YAML configuration**: Easy-to-manage app lists in `applist.yaml`
-- **Rich output**: Colorful interface with spinners and progress indicators
-- **Smart filtering**: Show only outdated packages with intelligent resource filtering
-- **Shell completions**: Context-aware tab completion for all commands and options
+- **🍺 Homebrew**: Manage formulas and casks with intelligent updating
+- **📦 NPM**: Handle global Node.js packages with progress tracking
+- **🏪 App Store**: Update and manage Mac App Store applications
+- **🔨 Xcode**: Keep Xcode and command-line tools current
+- **🖥️ System**: Manage macOS system updates and tools
+- **⚡ Smart Operations**: Bulk operations with user confirmation and progress indicators
+- **🎯 Resource-Centric**: Modern CLI syntax with intuitive resource-based commands
+- **🔧 Shell Completions**: Intelligent tab completion for all commands and options
+- **📋 Configuration**: YAML-based package tracking with validation
 
 ## Installation
 
-### Global Installation (Recommended)
-
 ```bash
+# Homebrew
+brew tap jv-k/macos-updatetool
+brew install macos-updatetool
+
+# NPM
 npm install -g macos-updatetool
-# or
-pnpm install -g macos-updatetool
-```
 
-### Local Development
-
-```bash
+# Or clone and install locally
 git clone https://github.com/jv-k/macos-updatetool.git
 cd macos-updatetool
-npm install
-./bin/macos-updatetool help
+pnpm install
 ```
 
-## Prerequisites
+## Quick Start
 
-- macOS (Darwin)
-- Zsh shell
-- [Homebrew](https://brew.sh/)
-- [mas-cli](https://github.com/mas-cli/mas) (`brew install mas`)
-- [Node.js & npm](https://nodejs.org/)
-- [yq](https://github.com/mikefarah/yq) (`brew install yq`)
+```bash
+# Show help and available commands
+macos-updatetool help
 
-## Configuration
+# List all packages from all sources
+macos-updatetool all list
 
-Create or customize `config/applist.yaml` to define which packages to manage:
+# Show only outdated packages (smart filtering)
+macos-updatetool all list outdated
 
-```yaml
-appstore_apps:
-  - '497799835' # Xcode
-  - '1295203466' # Microsoft Remote Desktop
+# Update all outdated packages with confirmation
+macos-updatetool all update
 
-npm_apps:
-  - '@vue/cli'
-  - 'typescript'
-  - 'eslint'
+# Add a Homebrew formula to your configuration
+macos-updatetool brew formulas add git
 
-brew_formulas:
-  - 'git'
-  - 'node'
-  - 'python'
+# Add multiple Homebrew formulas at once
+macos-updatetool brew add git node bats-core
 
-brew_casks:
-  - 'visual-studio-code'
-  - 'docker'
-  - 'firefox'
+# Add a Homebrew cask to your configuration
+macos-updatetool brew casks add visual-studio-code
+
+# Add multiple casks at once
+macos-updatetool brew casks add firefox chrome docker
+
+# Add multiple npm packages at once
+macos-updatetool npm add typescript eslint nodemon
+
+# Update only outdated npm packages
+macos-updatetool npm update outdated
 ```
 
 ## CLI Syntax
 
-`macos-updatetool <resource-type> [resource-subtype] <command> [sub-command] [pkg-name]`
+The tool uses a modern resource-centric syntax:
+
+```text
+macos-updatetool <resource-type> [resource-subtype] <command> [sub-command] [pkg-name...]
+```
 
 ### Resource Types
 
-- `brew`: Manages Homebrew formulas and casks
-- `npm`: Manages global NPM packages
-- `appstore`: Manages Mac App Store applications
-- `xcode`: Manages updating Xcode
-- `system`: Manages macOS system updates and Xcode command-line tools
-- `all`: Represents all supported resource types
+- `brew` - Homebrew formulas and casks
+- `npm` - Global NPM packages
+- `appstore` - Mac App Store applications
+- `xcode` - Xcode IDE
+- `system` - macOS system updates and Xcode command-line tools
+- `all` - All supported resource types
 
 ### Commands
 
-- `list`: Display packages and their current version/installation status
-- `install`: Install specified or all tracked packages
-- `update`: Update specified or all tracked packages
-- `add`: Add a package to the configuration file for tracking (brew, npm, appstore only)
-- `remove`: Remove a package from the configuration file (brew, npm, appstore only)
+- `list` - Display packages and their installation status
+- `install` - Install specified or all tracked packages
+- `update` - Update specified or all tracked packages
+- `add` - Add a package to the configuration file
+- `remove` - Remove a package from the configuration file
 
-### Sub-Commands
+### Sub-commands
 
-- `outdated`: Restricts list/install commands to only outdated packages (npm, brew, appstore only)
-- `all`: Applies the command to all tracked packages (default behavior)
+- `outdated` - Restrict to only outdated packages (brew, npm, appstore, all)
+- `all` - Apply to all tracked packages (default)
 
-## Usage Examples
+## Configuration
 
-### List Commands
+The tool uses a YAML configuration file located at:
 
-```bash
-# List all packages with status
-macos-updatetool all list
-
-# List specific package types
-macos-updatetool npm list
-macos-updatetool brew list
-macos-updatetool brew formulas list
-macos-updatetool brew casks list
-macos-updatetool appstore list
-macos-updatetool xcode list
-macos-updatetool system list
-
-# Show only outdated packages
-macos-updatetool all list outdated
-macos-updatetool npm list outdated
-macos-updatetool brew list outdated
-macos-updatetool brew casks list outdated
+```text
+~/.config/macos-updatetool/applist.yaml
 ```
 
-### Update Commands
+Example configuration:
 
-```bash
-# Update everything
-macos-updatetool all update
+```yaml
+appstore:
+  - 497799835 # Xcode
+  - 1295203466 # Microsoft Remote Desktop
 
-# Update specific package types
-macos-updatetool npm update
-macos-updatetool brew update
-macos-updatetool brew formulas update
-macos-updatetool brew casks update
-macos-updatetool appstore update
-macos-updatetool xcode update
-macos-updatetool system update
+npm:
+  - typescript
+  - '@vue/cli'
+  - nodemon
 
-# Update only outdated packages
-macos-updatetool npm update outdated
-macos-updatetool brew update outdated
+brew:
+  - git
+  - curl
+  - jq
+
+cask:
+  - visual-studio-code
+  - firefox
+  - docker
 ```
 
-### Install Commands
+### Configuration Management
 
 ```bash
-# Install everything
-macos-updatetool all install
+# Check configuration status and validation
+macos-updatetool --config
 
-# Install specific package types
-macos-updatetool npm install
-macos-updatetool brew install
-macos-updatetool brew formulas install
-macos-updatetool brew casks install
-macos-updatetool appstore install
-macos-updatetool xcode install
-macos-updatetool system install
+# Validate configuration with detailed schema checking
+pnpm run config:check
 ```
-
-### Package Management
-
-````bash
-# Add packages to configuration
-macos-updatetool npm add typescript
-macos-updatetool brew add git
-macos-updatetool brew formulas add node
-macos-updatetool brew casks add visual-studio-code
-macos-updatetool appstore add 497799835
-
-# Remove packages from configuration
-macos-updatetool npm remove old-package
-macos-updatetool brew remove unwanted-formula
-macos-updatetool brew casks remove old-app
-
-## Status Indicators
-
-- ✔ **Up-to-date**: Package is installed and current
-- ! **Outdated**: Package is installed but has updates available
-- ✖ **Not installed**: Package is defined but not installed
 
 ## Shell Completions
 
-Enable intelligent tab completion for Zsh:
+Install intelligent tab completions for your shell:
 
 ```bash
-# Add to ~/.zshrc
-eval "$(macos-updatetool completions)"
+# Generate completion script
+macos-updatetool completions > ~/.zsh/completions/_macos-updatetool
 
-# Then reload your shell
-source ~/.zshrc
-````
+# Add to your .zshrc
+echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
+echo 'autoload -U compinit && compinit' >> ~/.zshrc
+```
 
-### Completion Features
+## Development
 
-- **Resource Type Completion**: Tab complete `brew`, `npm`, `appstore`, `xcode`, `system`, `all`
-- **Command Completion**: Tab complete `list`, `install`, `update`, `add`, `remove` (context-aware)
-- **Sub-Command Completion**: Tab complete `outdated`, `all` where applicable
-- **Brew Subtype Completion**: Tab complete `casks`, `formulas` for brew commands
-
-## Help and Documentation
+### Prerequisites
 
 ```bash
-# Show comprehensive help
-macos-updatetool help
-macos-updatetool --help
-macos-updatetool -h
+# Install development dependencies
+brew install shellcheck bats-core
+pnpm install
+```
 
-# Generate shell completions
-macos-updatetool completions
+### Testing
+
+The project includes a comprehensive test suite designed specifically for zsh:
+
+```bash
+# Run all tests with zsh-specific linting
+pnpm run test:all
+
+# Run zsh-specific linting
+pnpm run lint                    # Comprehensive zsh linting
+pnpm run lint:shellcheck        # ShellCheck with zsh configuration
+pnpm run lint:syntax           # Zsh syntax validation
+
+# Run specific test types
+pnpm run test:unit              # Unit tests
+pnpm run test:integration       # Integration tests
+pnpm run test:e2e              # End-to-end user scenarios
+pnpm run test:config           # Configuration tests
+pnpm run test:completions      # Zsh completion tests
+
+# Validate configuration
+pnpm run config:check
+
+# Setup development environment
+pnpm run dev:setup
+```
+
+### Zsh-Specific Development
+
+This project is built specifically for zsh and includes:
+
+- **Zsh syntax validation**: Ensures compatibility with zsh-specific features
+- **ShellCheck with zsh configuration**: Tailored linting rules for zsh
+- **Zsh completion testing**: Validates completion scripts work in zsh environment
+- **Zsh-specific test helpers**: Test utilities designed for zsh behavior
+
+### Test Structure
+
+```text
+test/
+├── unit/              # Unit tests for individual functions
+├── integration/       # Integration tests for command workflows
+├── e2e/              # End-to-end user scenarios
+├── config/           # Configuration and YAML validation tests
+├── completions/      # Shell completion functionality tests
+├── fixtures/         # Test data and mock configurations
+└── test_helper.bash  # Shared test utilities and setup
+```
+
+### Available Scripts
+
+```bash
+pnpm run lint              # Comprehensive zsh linting (syntax + shellcheck + best practices)
+pnpm run lint:shellcheck   # ShellCheck with bash compatibility mode
+pnpm run lint:syntax       # Zsh syntax validation only
+pnpm run lint:detailed     # Detailed linting output (gcc format)
+pnpm run lint:help         # Show guidance for fixing common linting issues
+pnpm run lint:autofix      # Automatically fix safe, mechanical transformations
+pnpm run config:check      # Validate YAML configuration schema
+pnpm run test             # Run basic test suite
+pnpm run test:all         # Run comprehensive test suite with zsh linting
+pnpm run dev:setup        # Install development dependencies and setup
+```
+
+## Examples
+
+### Resource-Specific Operations
+
+```bash
+# Homebrew operations
+macos-updatetool brew list                    # List all brew packages
+macos-updatetool brew casks list outdated    # List outdated casks only
+macos-updatetool brew formulas update        # Update all formulas
+macos-updatetool brew casks add firefox      # Add single cask to configuration
+macos-updatetool brew add git node bats-core # Add multiple formulas at once
+macos-updatetool brew casks add firefox chrome docker # Add multiple casks at once
+
+# NPM operations
+macos-updatetool npm list outdated           # Show outdated global packages
+macos-updatetool npm update outdated         # Update only outdated packages
+macos-updatetool npm add typescript          # Add single package to configuration
+macos-updatetool npm add typescript eslint jest # Add multiple packages at once
+
+# App Store operations
+macos-updatetool appstore list               # List App Store apps
+macos-updatetool appstore update             # Update all App Store apps
+macos-updatetool appstore add 497799835      # Add app by ID
+
+# System operations
+macos-updatetool system list                 # Show system update status
+macos-updatetool xcode update                # Update Xcode
+```
+
+### Bulk Operations
+
+```bash
+# Smart "all" operations with confirmation prompts
+macos-updatetool all list                    # List everything
+macos-updatetool all list outdated          # Smart outdated filtering (excludes xcode/system)
+macos-updatetool all update                 # Update everything (requires confirmation)
+macos-updatetool all install                # Install all configured packages
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Dependencies**: Ensure Homebrew, mas-cli, and npm are installed
+2. **Permissions**: Some operations may require administrator privileges
+3. **Configuration**: Use `macos-updatetool --config` to check YAML syntax
+4. **Testing**: Run `pnpm run test:all` to verify functionality
+
+### Debug Information
+
+```bash
+# Check tool version and information
+macos-updatetool --version
+
+# Validate configuration file
+macos-updatetool --config
+
+# Test shell completions
+macos-updatetool completions | head -20
 ```
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch: `git checkout -b feature-name`
+3. Make changes and add tests: `pnpm run test:all`
+4. Ensure linting passes: `pnpm run lint`
+5. Commit changes: `git commit -am 'Add feature'`
+6. Push to branch: `git push origin feature-name`
+7. Submit a pull request
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Author
 
 **John Valai** - [git@jvk.to](mailto:git@jvk.to)
 
-## Acknowledgments
+---
 
-- Built for macOS power users who want automated package management
-- Inspired by the need for a unified tool across multiple package managers
-- Thanks to the maintainers of Homebrew, mas-cli, and other dependencies
+## More Information
+
+- [CLI Syntax Reference](docs/cli-syntax.md)
+- [Development TODO](TODO.md)
+- [Issue Tracker](https://github.com/jv-k/macos-updatetool/issues)
