@@ -742,8 +742,9 @@ list_brew() {
     
     # Fetch JSON for all outdated packages at once with spinner
     if [[ ${#outdated_in_list[@]} -gt 0 ]]; then
-      local temp_json=$(mktemp)
+      local temp_json
       local brew_info_cmd
+      temp_json=$(mktemp)
       brew_info_cmd="brew info --json=v2 --${package_type} $(printf '%s ' "${outdated_in_list[@]}") > '$temp_json'"
       show_spinner "Fetching version info for ${#outdated_in_list[@]} outdated ${package_type}s" "$brew_info_cmd" 15
       brew_json=$(cat "$temp_json")
@@ -1055,7 +1056,7 @@ main() {
         brew)
           [[ "$resource_subtype" == "casks" ]] && list_brew "cask" "$show_outdated"
           [[ "$resource_subtype" == "formulas" ]] && list_brew "formula" "$show_outdated"
-          [[ -z "$resource_subtype" ]] && list_brew "formula" "$show_outdated" && list_brew "cask" "$show_outdated"
+          [[ -z "$resource_subtype" ]] && { list_brew "formula" "$show_outdated"; list_brew "cask" "$show_outdated"; }
           ;;
         npm) list_npm "$show_outdated" ;;
         appstore) list_appstore "$show_outdated" ;;
@@ -1079,7 +1080,7 @@ main() {
         brew)
           [[ "$resource_subtype" == "formulas" ]] && update_formulas
           [[ "$resource_subtype" == "casks" ]] && update_casks
-          [[ -z "$resource_subtype" ]] && update_formulas && update_casks
+          [[ -z "$resource_subtype" ]] && { update_formulas; update_casks; }
           ;;
         npm) update_npm ;;
         appstore) update_appstore ;;
@@ -1093,7 +1094,7 @@ main() {
         brew)
           [[ "$resource_subtype" == "formulas" ]] && install_formulas
           [[ "$resource_subtype" == "casks" ]] && install_casks
-          [[ -z "$resource_subtype" ]] && install_formulas && install_casks
+          [[ -z "$resource_subtype" ]] && { install_formulas; install_casks; }
           ;;
         npm) install_npm_apps ;;
         appstore) install_appstore_apps ;;
