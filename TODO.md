@@ -2,25 +2,23 @@
 
 ## Features to Add
 
-- [ ] **Configuration validation**: Validate applist.yaml schema on startup
 - [ ] **Backup/restore**: Create backups of current package states
 - [ ] **Selective updates**: Interactive mode to choose which packages to update
-- [ ] **Update notifications**: Check for tool updates
 - [ ] **Parallel processing**: Run multiple package managers simultaneously
 - [ ] **Dry run mode**: Show what would be updated without making changes
 - [ ] **Custom package sources**: Support for additional package managers
-- [ ] **Package search**: Search for packages across all sources
 - [ ] **Update scheduling**: Cron-like scheduling for automatic updates
 - [ ] **Rollback capability**: Undo recent package changes
+- [ ] **Python system-wide package support**: Add support for pip packages
+  - [ ] **List installed packages**: Show all installed pip packages
+  - [ ] **Update packages**: Update all or specific pip packages
+  - [ ] **Install packages**: Install new pip packages from requirements.txt
 
 ## Improvements
 
 - [ ] **Performance**: Cache package information to reduce API calls
-- [ ] **Error handling**: Better error messages and recovery
 - [ ] **Logging**: Optional detailed logging to file
-- [ ] **Progress indicators**: More detailed progress for long operations
 - [ ] **Configuration management**: Multiple config file support
-- [ ] **Package grouping**: Organize packages into custom groups
 - [ ] **Dependency resolution**: Handle package dependencies intelligently
 - [ ] **Package name completion**: Tab complete actual package names for add/remove commands
 
@@ -56,3 +54,9 @@
 - [x] **Command validation**: Proper validation of command/resource combinations
 - [x] **Install/update/list separation**: Clean separation of concerns for different operations
 - [x] **All resource type**: Smart handling of bulk operations across multiple resource types
+- [x] **Configuration validation**: Added --config switch with YAML validation and status checking
+- [x] **Update notifications**: Added --version switch showing tool version, author, and website info
+- [x] **Package search**: Can search/list packages across all sources with comprehensive filtering
+- [x] **Error handling**: Significantly improved error messages with clear usage guidance and styling
+- [x] **Progress indicators**: Added detailed package counters (1/43 style) for all update/install operations
+- [x] **Package grouping**: Organized packages by resource types with proper categorization
