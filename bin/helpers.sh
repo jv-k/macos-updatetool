@@ -93,6 +93,43 @@ parse_message_indent() {
 }
 
 # /**
+#  * Applies uppercase transformation while preserving ANSI escape sequences.
+#  * This function processes text character by character, preserving escape sequences.
+#  * @param {string} text - Text that may contain ANSI escape sequences.
+#  * @returns {string} Text with uppercase applied to visible characters only.
+#  */
+apply_uppercase_preserving_ansi() {
+  local text="$1"
+  local result=""
+  local i=1
+  local in_escape=0
+  
+  while [[ $i -le ${#text} ]]; do
+    local char="${text[$i]}"
+    
+    if [[ "${char}" == $'\x1b' ]]; then
+      # Start of escape sequence
+      in_escape=1
+      result+="${char}"
+    elif [[ $in_escape -eq 1 ]]; then
+      # In escape sequence, preserve as-is
+      result+="${char}"
+      # Check if this is the end of the escape sequence (letter character)
+      if [[ "${char}" =~ [a-zA-Z] ]]; then
+        in_escape=0
+      fi
+    else
+      # Regular character, apply uppercase
+      result+="${char:u}"
+    fi
+    
+    ((i++))
+  done
+  
+  echo "${result}"
+}
+
+# /**
 #  * Applies color and style sequences to a message and optionally uppercases it.
 #  * @param {string} text_color - Color escape (can be empty).
 #  * @param {string} text_styles - Style escapes (can be empty).
@@ -187,7 +224,7 @@ msg_header() {
   
   # Apply uppercase if requested
   if [[ -n "${text_upper}" ]]; then
-    styled_text="${styled_text:u}"
+    styled_text="$(apply_uppercase_preserving_ansi "${styled_text}")"
   fi
   
   # Get the header style and combine with additional styles from flags
