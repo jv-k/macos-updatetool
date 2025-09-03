@@ -69,6 +69,11 @@ typeset -A STYLE=(
   [RESET]='\e[0m'
 )
 
+# /**
+#  * Builds a single ANSI escape sequence by chaining multiple STYLE keys, omitting resets.
+#  * @param {...string} args - Style keys from the STYLE map (e.g., BOLD, RED).
+#  * @returns {string} ANSI sequence printed to stdout without newline.
+#  */
 # Chain styles: usage style_chain BOLD RED
 # @param {...string} args - List of style keys from the STYLE associative array
 style_chain() {
@@ -95,9 +100,14 @@ style_chain() {
   fi
 }
 
+# /**
+#  * Wraps text with one or more style codes and resets at the end.
+#  * @param {...string} args - One or more style keys followed by the text to style.
+#  * @param {string} text - The text to apply the styles to (last argument).
+#  * @returns {string} Styled string printed to stdout.
+#  */
 # Wrap text with styles: usage style_wrap BOLD RED "Hello"
 # @param {...string} args - List of style keys followed by the text to style
-# @param {string} text - The text to apply the styles to
 style_wrap() {
   local n=${#@}
   local styles=("${@:1:$((n-1))}")
@@ -140,7 +150,9 @@ style_h5() { style_wrap UNDERLINE GREEN "$*"; }
 style_h6() { style_wrap UNDERLINE PURPLE "$*"; }
 style_quote() { style_wrap ITALIC CYAN "$*"; }
 
-# Demo
+# /**
+#  * Prints a demo of all available styles for interactive shells.
+#  */
 style_demo() {
   echo "\n--- STYLES Demo ---"
   typeset -a STYLE_ORDER=(

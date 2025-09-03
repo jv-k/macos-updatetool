@@ -6,9 +6,13 @@
 # Import styles
 source "${0:A:h}/styles.zsh"
 
-# Helper function to parse common styling flags
-# Usage: eval "$(parse_style_flags "$default_color" "$@")"
-# Sets: text_color, text_styles, text_upper, remaining_args
+# /**
+#  * Parses common styling flags for message helpers and emits variable assignments.
+#  * Usage: eval "$(parse_style_flags defaultColor "$@")"
+#  * Sets: text_color, text_styles, text_upper, remaining_args (array-like)
+#  * @param {string} default_color - Default color style to apply when --color is present.
+#  * @param {...string} args - Flags and message parts.
+#  */
 parse_style_flags() {
   local default_color="$1"
   shift
@@ -56,10 +60,11 @@ parse_style_flags() {
   printf " )\n"
 }
 
-# Helper function to parse indentation from message text
-# Extracts leading spaces in multiples of 2 and returns cleaned message and indent
-# @param {string} message - The message text that may start with spaces
-# @returns Sets: clean_message, indent_prefix
+# /**
+#  * Extracts leading indentation (multiples of 2 spaces) from a message.
+#  * Emits: clean_message, indent_prefix
+#  * @param {string} message - The message text that may start with spaces.
+#  */
 parse_message_indent() {
   local message="$1"
   local clean_message="${message}"
@@ -87,11 +92,14 @@ parse_message_indent() {
   printf "indent_prefix=%q\n" "${indent_prefix}"
 }
 
-# Helper function to apply text styles dynamically
-# @param {string} text_color - The color style code (can be empty)
-# @param {string} text_styles - The style codes (can be empty)
-# @param {string} message - The message text
-# @param {string} text_upper - Whether to uppercase the text (can be empty)
+# /**
+#  * Applies color and style sequences to a message and optionally uppercases it.
+#  * @param {string} text_color - Color escape (can be empty).
+#  * @param {string} text_styles - Style escapes (can be empty).
+#  * @param {string} message - Message text.
+#  * @param {string} text_upper - Non-empty string triggers uppercasing.
+#  * @returns {string} Styled message printed to stdout.
+#  */
 apply_text_styles() {
   local text_color="$1"
   local text_styles="$2"
@@ -110,12 +118,11 @@ apply_text_styles() {
   fi
 }
 
-# @param {...string} args - Message text to display
-# @param --color - Optional flag to make the entire message text colored
-# @param --bold - Optional flag to make the message text bold
-# @param --italic - Optional flag to make the message text italic  
-# @param --underline - Optional flag to make the message text underlined
-# @param --upper - Optional flag to make the message text uppercase
+# /**
+#  * Prints an informational message with an ℹ symbol and optional styles.
+#  * Flags: --color, --bold, --italic, --underline, --upper
+#  * @param {...string} args - Message and optional style flags.
+#  */
 msg_info() {
   local message=""
   local clean_message=""
@@ -135,13 +142,12 @@ msg_info() {
   echo -e "${indent_prefix}$(style_wrap CYAN "${SYMBOL[INFO]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
-# @param {string} [level=h1] - Header level (h1-h6), optional, defaults to h1
-# @param {string} styled_text - Text to be styled with the header level
-# @param {string} [default_text] - Optional text in default style to append
-# @param --bold - Optional flag to add bold to the header text
-# @param --italic - Optional flag to add italic to the header text
-# @param --underline - Optional flag to add underline to the header text
-# @param --upper - Optional flag to make the header text uppercase
+# /**
+#  * Prints a styled header line with configurable level (h1-h6).
+#  * Flags: --bold, --italic, --underline, --upper
+#  * @param {string} [level=h1] - Header level (h1-h6).
+#  * @param {...string} args - Header text and optional default text.
+#  */
 msg_header() {
   local header_level="h1"
   local styled_text=""
@@ -199,11 +205,11 @@ msg_header() {
   printf "%b\n" "${output}"
 }
 
-# @param --color - Optional flag to make the entire message text colored
-# @param --bold - Optional flag to make the message text bold
-# @param --italic - Optional flag to make the message text italic
-# @param --underline - Optional flag to make the message text underlined
-# @param --upper - Optional flag to make the message text uppercase
+# /**
+#  * Prints a muted (dim/gray) message, preserving optional styles.
+#  * Flags: --color, --bold, --italic, --underline, --upper
+#  * @param {...string} args - Message and optional style flags.
+#  */
 msg_muted() {
   local message=""
   local clean_message=""
@@ -225,11 +231,11 @@ msg_muted() {
   echo -e "${indent_prefix}$(apply_text_styles "${combined_style}" "" "${clean_message## }" "${text_upper}")"
 }
 
-# @param --color - Optional flag to make the entire message text colored
-# @param --bold - Optional flag to make the message text bold
-# @param --italic - Optional flag to make the message text italic
-# @param --underline - Optional flag to make the message text underlined
-# @param --upper - Optional flag to make the message text uppercase
+# /**
+#  * Prints a success message with a ✔ symbol and optional styles.
+#  * Flags: --color, --bold, --italic, --underline, --upper
+#  * @param {...string} args - Message and optional style flags.
+#  */
 msg_success() {
   local message=""
   local clean_message=""
@@ -249,11 +255,11 @@ msg_success() {
   echo -e "${indent_prefix}$(style_wrap GREEN "${SYMBOL[SUCCESS]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
-# @param --color - Optional flag to make the entire message text colored
-# @param --bold - Optional flag to make the message text bold
-# @param --italic - Optional flag to make the message text italic
-# @param --underline - Optional flag to make the message text underlined
-# @param --upper - Optional flag to make the message text uppercase
+# /**
+#  * Prints a warning message with a ! symbol and optional styles.
+#  * Flags: --color, --bold, --italic, --underline, --upper
+#  * @param {...string} args - Message and optional style flags.
+#  */
 msg_warning() {
   local message=""
   local clean_message=""
@@ -273,11 +279,11 @@ msg_warning() {
   echo -e "${indent_prefix}$(style_wrap YELLOW "${SYMBOL[WARNING]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
-# @param --color - Optional flag to make the entire message text colored
-# @param --bold - Optional flag to make the message text bold
-# @param --italic - Optional flag to make the message text italic
-# @param --underline - Optional flag to make the message text underlined
-# @param --upper - Optional flag to make the message text uppercase
+# /**
+#  * Prints an error message with a ✖ symbol and optional styles.
+#  * Flags: --color, --bold, --italic, --underline, --upper
+#  * @param {...string} args - Message and optional style flags.
+#  */
 msg_error() {
   local message=""
   local clean_message=""
@@ -297,11 +303,11 @@ msg_error() {
   echo -e "${indent_prefix}$(style_wrap RED "${SYMBOL[DANGER]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
-# @param --color - Optional flag to make the entire message text colored
-# @param --bold - Optional flag to make the message text bold
-# @param --italic - Optional flag to make the message text italic
-# @param --underline - Optional flag to make the message text underlined
-# @param --upper - Optional flag to make the message text uppercase
+# /**
+#  * Prints a bullet list entry with • symbol and optional styles.
+#  * Flags: --color, --bold, --italic, --underline, --upper
+#  * @param {...string} args - Message and optional style flags.
+#  */
 msg_bullet() {
   local message=""
   local clean_message=""
@@ -321,11 +327,11 @@ msg_bullet() {
   echo -e "${indent_prefix}$(style_wrap PURPLE "${SYMBOL[BULLET]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
-# @param --color - Optional flag to make the entire message text colored
-# @param --bold - Optional flag to make the message text bold
-# @param --italic - Optional flag to make the message text italic
-# @param --underline - Optional flag to make the message text underlined
-# @param --upper - Optional flag to make the message text uppercase
+# /**
+#  * Prints a question message with a ? symbol and optional styles.
+#  * Flags: --color, --bold, --italic, --underline, --upper
+#  * @param {...string} args - Message and optional style flags.
+#  */
 msg_question() {
   local message=""
   local clean_message=""
@@ -345,13 +351,14 @@ msg_question() {
   echo -e "${indent_prefix}$(style_wrap YELLOW "${SYMBOL[QUESTION]}") $(apply_text_styles "${text_color}" "${text_styles}" "${clean_message## }" "${text_upper}")"
 }
 
-# Shows a spinner while a background command is running
-# @param {string} message - Message to display with spinner
-# @param {string} command - Command to run in background
-# @param {string} [timeout] - Optional timeout in seconds (default: 30)
-# @param {string} [--show-output] - Optional flag to show command output on success
-# @param {string} [--sudo] - Optional flag to ensure sudo authentication before running command
-# Note: If message starts with spaces, indent is moved to spinner and output is further indented
+# /**
+#  * Shows a spinner while running a background command, capturing its output.
+#  * Optionally enforces sudo auth and supports timeout/display of output.
+#  * Flags: --show-output, --sudo
+#  * @param {string} message - Message to display with spinner.
+#  * @param {string} command - Command to run in background.
+#  * @param {string} [timeout] - Timeout in seconds (0 disables).
+#  */
 show_spinner() {
   local message=""
   local command=""
@@ -474,9 +481,11 @@ show_spinner() {
   return "${exit_code}"
 }
 
-# Ensures sudo authentication is available for subsequent commands
-# This allows commands requiring sudo to run in show_spinner without prompting
-# @returns {number} 0 on success, 1 if user cancels or authentication fails
+# /**
+#  * Ensures sudo credentials are cached for subsequent privileged commands.
+#  * Prompts user if necessary and prints success/failure messages.
+#  * @returns {number} 0 on success, 1 on failure.
+#  */
 ensure_sudo() {
   # Check if we already have sudo access
   if sudo -n true 2>/dev/null; then
@@ -495,9 +504,12 @@ ensure_sudo() {
   fi
 }
 
-# @param {string} question - The confirmation question to ask the user.
-# @param {string} [default_choice=N] - The default choice if the user just presses Enter.
-# @returns {number} 0 if the user confirms (yes), 1 if they decline (no).
+# /**
+#  * Prompts the user for a yes/no confirmation.
+#  * @param {string} question - The confirmation question to ask the user.
+#  * @param {string} [default_choice=N] - Default choice if the user presses Enter.
+#  * @returns {number} 0 if yes, 1 if no.
+#  */
 confirm() {
   local question="$1"
   local default_choice="${2:-N}"

@@ -1086,6 +1086,8 @@ show_config() {
   fi
 }
 
+# Entry point: validates environment and arguments, dispatches to resource commands.
+# Handles global options, confirmation prompts, and routing to list/install/update flows.
 main() {
   if [[ "$1" != "completions" && "$1" != "--version" && "$1" != "-v" && "$1" != "--config" ]]; then
     echo
@@ -1308,13 +1310,18 @@ main() {
   esac
 }
 
+# /**
+#  * Renders the ASCII art logo in green.
+#  */
 show_logo() {
   for line in "${LOGO[@]}"; do
     echo -e "$(style_wrap GREEN "${line}")"
   done
 }
 
-# Displays the help message with all available options.
+# /**
+#  * Displays contextual help including usage, options, resource types, subtypes, commands, and examples.
+#  */
 show_help() {
   # Get description from package.json
   local description name
@@ -1381,7 +1388,9 @@ show_help() {
   echo -e "    $(style_wrap BOLD "eval (${name} completions)")"
 }
 
-# Generates the shell completion script for this utility.
+# /**
+#  * Emits a zsh completion function for macos-updatetool, covering resource types and commands.
+#  */
 shell_completions() {
   cat <<'EOF'
 autoload -Uz compinit bashcompinit
