@@ -430,14 +430,14 @@ show_spinner() {
   local i=0
   while kill -0 "${pid}" 2>/dev/null; do
     local spinner_char=${spinner_chars:$((i % ${#spinner_chars})):1}
-    printf "\r${indent_prefix}$(style_wrap CYAN "${spinner_char}") ${clean_message}..."
+    printf "\r%s %s..." "${indent_prefix}$(style_wrap CYAN "${spinner_char}")" "${clean_message}" 
     sleep 0.1
     ((i++))
     
     # Check for timeout (skip if timeout is 0)
     if [[ "${timeout}" != "0" ]] && [[ $((i / 10)) -gt ${timeout} ]]; then
       kill "${pid}" 2>/dev/null
-      printf "\r${indent_prefix}$(style_wrap RED "${SYMBOL[DANGER]}") ${clean_message} (timed out)\n"
+      printf "\r%s %s (timed out)\n" "$(style_wrap RED "${SYMBOL[DANGER]}")" "${clean_message}" 
       rm -f "${temp_file}" "${temp_err}"
       return 1
     fi
