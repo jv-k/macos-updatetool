@@ -104,14 +104,14 @@ apply_uppercase_preserving_ansi() {
   local i=1
   local in_escape=0
   
-  while [[ $i -le ${#text} ]]; do
-    local char="${text[$i]}"
+  while [[ ${i} -le ${#text} ]]; do
+    local char="${text[${i}]}"
     
     if [[ "${char}" == $'\x1b' ]]; then
       # Start of escape sequence
       in_escape=1
       result+="${char}"
-    elif [[ $in_escape -eq 1 ]]; then
+    elif [[ ${in_escape} -eq 1 ]]; then
       # In escape sequence, preserve as-is
       result+="${char}"
       # Check if this is the end of the escape sequence (letter character)
