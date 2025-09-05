@@ -52,6 +52,7 @@
 
 ## Recently Completed ✅
 
+- [x] **Bug: version/description/name in help**: Fix incorrect version/description/name in help output, due to CWD issue.
 - [x] **Multiple package support**: Added ability to add/remove multiple packages in single commands.
 - [x] **Environment variable config override**: Added MACOS_UPDATETOOL_CONFIG for safe testing.
 

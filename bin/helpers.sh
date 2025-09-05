@@ -3,8 +3,10 @@
 # Output utilities for clean messages
 # This file contains all message formatting functions for macos-updatetool
 
+MODULE_DIR="${0:A:h}/.."
+
 # Import styles
-source "${0:A:h}/styles.zsh"
+source "${MODULE_DIR}/bin/styles.zsh"
 
 # /**
 #  * Parses common styling flags for message helpers and emits variable assignments.
@@ -559,4 +561,37 @@ confirm() {
 
   [[ -z "${response}" ]] && response="${default_choice}"
   [[ "${response}" =~ ^[Yy]$ ]] && return 0 || return 1
+}
+
+# Shows version information with logo
+show_version() {
+  # Get information from package.json
+  local description name version website author
+  website=$(get_package_info "homepage" "https://github.com/jv-k/macos-updatetool")
+  version=$(get_package_info "version" "development")
+  author=$(get_package_info "author" "John Valai")
+  echo -e "$(style_wrap DIM "Version: $(style_wrap RESET BOLD "${version}")")"
+  echo -e "$(style_wrap DIM "Author: $(style_wrap RESET BOLD "${author}")")"
+  echo -e "$(style_wrap DIM "Website: $(style_wrap RESET BOLD "${website}")")"
+}
+
+# Retrieves package information from package.json
+# @param {string} field - The JSON field to retrieve (e.g., 'version', 'name', 'description')
+# @param {string} fallback - Optional fallback value if field is not found
+# @returns {string} The field value or fallback
+get_package_info() {
+  local field="$1"
+  local fallback="${2:-}"
+  local result
+  
+  if result=$(jq -r ".${field}" < "${MODULE_DIR}/package.json" 2>/dev/null) && [[ "${result}" != "null" && -n "${result}" ]]; then
+    # Special handling for author field to clean up email
+    if [[ "${field}" == "author" ]]; then
+      echo "${result}" | sed 's/<.*>//' | sed 's/[[:space:]]*$//'
+    else
+      echo "${result}"
+    fi
+  else
+    echo "${fallback}"
+  fi
 }

@@ -42,9 +42,12 @@ LOGO=(
 #   macos-updatetool all update
 #   macos-updatetool brew formulas add git
 
+# Posix-compliant way to get the script's directory
+MODULE_DIR="${0:A:h}/.."
+
 # Source the styles and helper utilities
-source "${0:A:h}/styles.zsh"
-source "${0:A:h}/helpers.sh"
+source "${MODULE_DIR}/bin/styles.zsh"
+source "${MODULE_DIR}/bin/helpers.sh"
 
 # Define the path to the applist file, which should contain the lists of apps to be managed.
 # Can be overridden by MACOS_UPDATETOOL_CONFIG for testing
@@ -1036,20 +1039,6 @@ install_all() {
   fi
 }
 
-# Shows version information with logo
-show_version() {
-  # Get information from package.json
-  local description name version website author
-  website=$(jq -r '.homepage' < package.json 2>/dev/null || echo "https://github.com/jv-k/macos-updatetool")
-  version=$(jq -r '.version' < package.json 2>/dev/null || echo "development")
-  author=$(jq -r '.author' < package.json 2>/dev/null | sed 's/<.*>//' | sed 's/[[:space:]]*$//' || echo "John Valai")
-  
-  echo; show_logo
-  style_wrap DIM "Version: $(style_wrap RESET BOLD "${version}")"
-  style_wrap DIM "Author: $(style_wrap RESET BOLD "${author}")"
-  style_wrap DIM "Website: $(style_wrap RESET BOLD "${website}")"
-}
-
 # Shows configuration file location and status
 show_config() {
   echo
@@ -1323,10 +1312,12 @@ show_logo() {
 #  * Displays contextual help including usage, options, resource types, subtypes, commands, and examples.
 #  */
 show_help() {
-  # Get description from package.json
+  # Get description from package.json using get_package_info function
   local description name
-  description=$(jq -r '.description' < package.json)
-  name=$(jq -r '.name' < package.json)
+  description=$(get_package_info "description")
+  name=$(get_package_info "name")
+  echo
+  show_logo
   show_version
   style_wrap ITALIC M "\n${description}\n"
   msg_header h3 --upper "Usage"
