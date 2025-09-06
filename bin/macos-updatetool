@@ -53,6 +53,97 @@ source "${MODULE_DIR}/bin/helpers.sh"
 # Can be overridden by MACOS_UPDATETOOL_CONFIG for testing
 APPLIST="${MACOS_UPDATETOOL_CONFIG:-${HOME}/.config/macos-updatetool/applist.yaml}"
 
+# Backup directory for configuration files
+BACKUP_DIR="$(dirname "${APPLIST}")/backups"
+
+# /**
+#  * Creates a timestamped backup of the configuration file before modifications.
+#  * @param {string} operation - The operation being performed (e.g., "add", "install")
+#  * @returns {string} The full path to the created backup file, or empty string if no backup was created
+#  */
+create_config_backup() {
+  local operation="${1:-unknown}"
+  local timestamp
+  local backup_file
+
+  # Only create backup if the config file exists
+  if [[ ! -f "${APPLIST}" ]]; then
+    return 0
+  fi
+  
+  # Create backup directory if it doesn't exist
+  [[ ! -d "${BACKUP_DIR}" ]] && mkdir -p "${BACKUP_DIR}"
+  
+  # Generate timestamp in format: YYYY-MM-DD_HH-MM-SS
+  timestamp=$(date '+%Y-%m-%d_%H-%M-%S')
+  backup_file="${BACKUP_DIR}/applist_${operation}_${timestamp}.yaml"
+  
+  # Create the backup
+  cp "${APPLIST}" "${backup_file}";
+  echo "${backup_file}"
+}
+
+# /**
+#  * Removes backup file + folder if no changes were actually made.
+#  * @param {string} backup_file - The full path to the backup file to potentially remove
+#  */
+remove_backup() {
+  local backup_file="$1"
+  if [[ -n "${backup_file}" && -f "${backup_file}" ]]; then
+    rm "${backup_file}"
+    # Remove backup directory if it's now empty
+    [[ -d "${BACKUP_DIR}" ]] && [[ -z "$(ls -A "${BACKUP_DIR}" 2>/dev/null)" ]] && rmdir "${BACKUP_DIR}" 2>/dev/null
+  fi
+}
+
+# /**
+#  * Removes all backup files with user confirmation.
+#  * This is an undocumented cleanup feature.
+#  */
+cleanup_backups() {
+  local backup_count
+  
+  msg_header --upper --underline "\nBackup File Cleanup"
+  echo
+
+  # Count backup files
+  backup_count=$(find "${BACKUP_DIR}" -name "applist_*.yaml" -type f 2>/dev/null | wc -l | tr -d ' ')
+  # Check if backup directory exists
+  if [[ ! -d "${BACKUP_DIR}" ||  "${backup_count}" -eq 0 ]]; then
+    msg_warning --color "No backups found - nothing to clean up."
+    return 0
+  fi
+  
+  msg_info "Found ${backup_count} backup file(s) in:\n${BACKUP_DIR}"
+  echo
+  
+  # List existing backups
+  msg_info "Current backups:"
+  find "${BACKUP_DIR}" -name "applist_*.yaml" -type f -exec basename {} \; 2>/dev/null | sort | while read -r file; do
+    msg_bullet "  ${file}"
+  done
+  
+  echo
+  if confirm "Are you sure you want to delete ALL backup files? This cannot be undone."; then
+    if rm -f "${BACKUP_DIR}"/applist_*.yaml 2>/dev/null; then
+      echo
+      msg_success --color "All backup files have been removed."
+      
+      # Remove backup directory if empty
+      if rmdir "${BACKUP_DIR}" 2>/dev/null; then
+        echo
+        msg_info "Removed empty backup directory."
+      fi
+    else
+      echo
+      msg_error --color "Failed to remove some backup files."
+      return 1
+    fi
+  else
+    msg_warning --color "Cleanup cancelled - no files were removed."
+  fi
+}
+
 # Manages the applist.yaml file.
 # Acceptable categories are: appstore_apps, npm_apps, brew_formulas, brew_casks
 # @param {string} action - The action to perform ('add' or 'remove').
@@ -90,6 +181,10 @@ manage_applist() {
     msg_error "No package names provided for '${action}' command." >&2
     return 1
   fi
+
+  # Create backup before making any changes and capture the file path
+  local backup_file_path
+  backup_file_path=$(create_config_backup "${action}")
 
   # Set the YAML key based on the subtype
   [[ "${subtype}" == "formulas" ]] && key="brew_formulas"
@@ -176,6 +271,10 @@ manage_applist() {
     return 1
   fi
 
+  # If no successful changes were made, remove the temp backup file
+  if [[ ${#successful_packages[@]} -eq 0 ]]; then
+    remove_backup "${backup_file_path}"
+  fi
   return 0
 }
 
@@ -1108,6 +1207,10 @@ main() {
       show_config
       exit 0
       ;;
+    --cleanup)
+      cleanup_backups
+      exit 0
+      ;;
     completions)
       shell_completions
       exit 0
@@ -1323,12 +1426,6 @@ show_help() {
   msg_header h3 --upper "Usage"
   echo -e "  $(style_wrap BOLD "${name} <resource-type> [resource-subtype] <command> [sub-command] [pkg-name...]")\n"
 
-  msg_header h3 --upper "Global Options"
-  echo -e "  $(style_wrap CYAN BOLD "-h, --help")    Show this help message."
-  echo -e "  $(style_wrap CYAN BOLD "-v, --version")  Show version information with logo."
-  echo -e "  $(style_wrap CYAN BOLD "--config")       Show configuration file location and status."
-  echo -e "  $(style_wrap CYAN BOLD "completions")    Generate shell completion script.\n"
-
   msg_header h3 --upper "Resource Types"
   echo -e "  $(style_wrap CYAN BOLD "brew")        Manages Homebrew formulas and casks."
   echo -e "  $(style_wrap CYAN BOLD "npm")         Manages global NPM packages."
@@ -1352,6 +1449,13 @@ show_help() {
   msg_header h3 --upper "Sub-Commands"
   echo -e "  $(style_wrap CYAN BOLD "outdated")    Restricts list, or install commands to only outdated npm, brew, and appstore packages."
   echo -e "  $(style_wrap CYAN BOLD "all")         Applies the command to all tracked packages (this is the default behavior when no sub-command is specified).\n"
+
+  msg_header h3 --upper "Global Options"
+  echo -e "  $(style_wrap CYAN "-h, --help")     Show this help message."
+  echo -e "  $(style_wrap CYAN "-v, --version")  Show version information with logo."
+  echo -e "  $(style_wrap CYAN "--config")       Show configuration file location and status."
+  echo -e "  $(style_wrap CYAN "--cleanup")      Remove all backup files (requires confirmation)."
+  echo -e "  $(style_wrap CYAN "completions")    Generate shell completion script.\n"
 
   msg_header h3 --upper "Examples"
   echo -e "  $(style_wrap BOLD "brew list")                   Lists all installed formulas and casks."
