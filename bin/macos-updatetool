@@ -42,12 +42,12 @@ LOGO=(
 #   macos-updatetool all update
 #   macos-updatetool brew formulas add git
 
-# Posix-compliant way to get the script's directory
-MODULE_DIR="${0:A:h}/.."
+MODULE_DIR="${0:A:h}"
 
-# Source the styles and helper utilities
-source "${MODULE_DIR}/bin/styles.zsh"
-source "${MODULE_DIR}/bin/helpers.sh"
+# Load all modules
+for file in "${MODULE_DIR}"/*.zsh; do
+  source "${file}" || { echo "FATAL: Cannot load ${file}"; exit 1; }
+done
 
 # Define the path to the applist file, which should contain the lists of apps to be managed.
 # Can be overridden by MACOS_UPDATETOOL_CONFIG for testing
@@ -1481,142 +1481,6 @@ show_help() {
   echo -e "  • User confirmation is implemented for any $(style_wrap BOLD "update all") or $(style_wrap BOLD "install all") operation."
   echo -e "  • Enable intelligent tab completion by adding this to your shell configuration:"
   echo -e "    $(style_wrap BOLD "eval (${name} completions)")"
-}
-
-# /**
-#  * Emits a zsh completion function for macos-updatetool, covering resource types and commands.
-#  */
-shell_completions() {
-  cat <<'EOF'
-#compdef macos-updatetool
-
-_macos-updatetool() {
-  local context state state_descr line
-  local -a resource_types brew_subtypes commands sub_commands global_options
-  
-  # Define completion arrays with clean descriptions
-  resource_types=(
-    'all:all supported resource types'
-    'brew:Homebrew formulas and casks'
-    'npm:global NPM packages'
-    'appstore:Mac App Store applications'
-    'xcode:Xcode application'
-    'system:macOS system updates and command-line tools'
-  )
-  
-  brew_subtypes=(
-    'formulas:command-line tools'
-    'casks:GUI applications'
-  )
-  
-  commands=(
-    'list:display packages and status'
-    'install:install tracked packages'
-    'update:update tracked packages'
-    'add:add packages to config'
-    'remove:remove packages from config'
-  )
-  
-  sub_commands=(
-    'outdated:only outdated packages'
-  )
-  
-  global_options=(
-    '--version:show version information'
-    '-v:show version information'
-    '--config:show configuration location'
-    '--cleanup:remove backup files'
-    'completions:generate shell completions'
-    'help:show help information'
-    '--help:show help information'
-    '-h:show help information'
-  )
-
-  _arguments -C \
-    '1:resource type:->resource_types' \
-    '2:subtype or command:->second_arg' \
-    '3:command or sub-command:->third_arg' \
-    '4:sub-command:->fourth_arg' \
-    '*:packages:->packages'
-
-  case $state in
-    resource_types)
-      _describe -t resource-types 'resource types' resource_types
-      _describe -t global-options 'options' global_options
-      ;;
-    
-    second_arg)
-      case $words[2] in
-        brew)
-          _describe -t brew-subtypes 'brew subtypes' brew_subtypes
-          _describe -t commands 'commands' commands
-          ;;
-        npm|appstore)
-          _describe -t commands 'commands' commands
-          ;;
-        xcode|system|all)
-          local limited_commands=(
-            'list:display packages and status'
-            'install:install tracked packages'
-            'update:update tracked packages'
-          )
-          _describe -t commands 'commands' limited_commands
-          ;;
-      esac
-      ;;
-    
-    third_arg)
-      # Check if previous word was a brew subtype
-      if [[ $words[3] == 'formulas' || $words[3] == 'casks' ]]; then
-        _describe -t commands 'commands' commands
-      else
-        # Previous word was a command, now we need sub-commands
-        case $words[3] in
-          list|install|update)
-            case $words[2] in
-              npm|appstore|brew)
-                _describe -t sub-commands 'sub-commands' sub_commands
-                ;;
-            esac
-            ;;
-          add|remove)
-            _message 'package name'
-            ;;
-        esac
-      fi
-      ;;
-    
-    fourth_arg)
-      # This handles: brew [subtype] [command] [sub-command]
-      case $words[4] in
-        list|install|update)
-          case $words[2] in
-            brew)
-              _describe -t sub-commands 'sub-commands' sub_commands
-              ;;
-          esac
-          ;;
-        add|remove)
-          _message 'package name'
-          ;;
-      esac
-      ;;
-    
-    packages)
-      # For add/remove commands, allow multiple package names
-      local i
-      for ((i=2; i<=$#words; i++)); do
-        if [[ $words[i] == 'add' || $words[i] == 'remove' ]]; then
-          _message 'package name'
-          break
-        fi
-      done
-      ;;
-  esac
-}
-
-compdef _macos-updatetool macos-updatetool
-EOF
 }
 
 # Start the script by calling the main function with all command-line arguments.
