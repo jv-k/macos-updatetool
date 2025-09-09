@@ -61,46 +61,6 @@ init_configuration
 APPLIST=$(get_config_value "applist_path")
 BACKUP_DIR=$(get_config_value "backup_dir")
 
-# Checks for all required dependencies, including the Zsh environment.
-# If any are missing, it prints an error and exits.
-# @returns {number} 0 if all dependencies are available, 1 if any are missing
-check_dependencies() {
-  # Check for Zsh environment
-  if [ -z "${ZSH_VERSION}" ]; then
-    msg_error "Error: This script is designed to be run with Zsh.\n" >&2
-    return 1
-  fi
-  # Check required CLI tools
-  local -a missing_deps
-  local -a dependencies=("brew" "mas" "npm" "pip3" "xcode-select" "yq")
-
-  # Check Oh My Zsh installation
-  if [[ ! -d "${HOME}/.oh-my-zsh" ]] && [[ ! -f "${HOME}/.oh-my-zsh/oh-my-zsh.sh" ]]; then
-    missing_deps+=("omz (Oh My Zsh)")
-  fi
-  
-  # Check Zinit installation
-  if [[ ! -d "${HOME}/.local/share/zinit" ]] && [[ ! -d "${HOME}/.zinit" ]] && [[ ! -f "${HOME}/.local/share/zinit/zinit.zsh" ]]; then
-    missing_deps+=("zinit")
-  fi
-
-  for dep in "${dependencies[@]}"; do
-    if ! command -v "${dep}" &> /dev/null; then
-      missing_deps+=("${dep}")
-    fi
-  done
-
-  if [[ ${#missing_deps[@]} -gt 0 ]]; then
-    msg_error --color "Missing required command-line tools. Please install the following:" >&2
-    for dep in "${missing_deps[@]}"; do
-      msg_bullet "  ${STYLE[RED]}${dep}" >&2
-    done
-    echo
-    return 1
-  fi
-
-  msg_success "Dependencies check OK."
-}
 
 # Checks if App Store apps need updates and upgrades them
 # @returns {number} 0 on success, 1 on error
