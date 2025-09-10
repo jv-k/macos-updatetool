@@ -1,19 +1,12 @@
 #!/bin/zsh
 
-# A CLI tool that manages apps and packages on macOS.
-# It handles Homebrew, npm, App Store apps, and Xcode components.
-# Author:
-#   John Valai <git@jvk.to>
-# License:
-#   MIT License
+# A CLI tool that helps track and manage the update and installation of apps and packages on a macOS system.
 #
-# It can upgrade or install applications from multiple sources:
-#   * App Store (using mas)
-#   * npm
-#   * Homebrew (both formulas and casks)
+# Author: John Valai <git@jvk.to>
+# License: MIT License
 #
 # Configuration:
-#   * It relies on a file named `applist` (located in the same directory) to know which
+#   * It relies on a file named `applist.yaml` (located in the same directory) to know which
 #     specific applications and packages to manage.
 #
 # Dependencies:
@@ -22,20 +15,8 @@
 #   * npm: For managing global Node.js packages.
 #   * Oh My Zsh & zinit: For managing Zsh configuration.
 #   * pip3: For managing python packages.
-#   * Xcode Command Line Tools: MacOS tool for compiling and installing software.`
+#   * Xcode Command Line Tools: MacOS tool for compiling and installing software.
 #   * softwareupdate: Built-in MacOS tool for system updates.
-#
-# Usage:
-#   macos-updatetool <resource-type> [resource-subtype] <command> [sub-command] [pkg-name...]
-#
-# Examples:
-#   macos-updatetool brew list
-#   macos-updatetool brew casks list outdated
-#   macos-updatetool appstore update
-#   macos-updatetool system list
-#   macos-updatetool npm update outdated
-#   macos-updatetool all update
-#   macos-updatetool brew formulas add git
 
 MODULE_DIR="${0:A:h}"
 
@@ -51,6 +32,7 @@ init_configuration
 # shellcheck disable=SC2034  # Variables used throughout script
 # RESOURCE_COMMANDS, RESOURCE_ORDER, RESOURCE_SUB_COMMANDS defined in resources.zsh
 
+NAME=$(get_package_info "name")
 
 # Define the path to the applist file using configuration management
 APPLIST=$(get_config_value "applist_path")
@@ -112,7 +94,13 @@ show_apple_logo() {
 # Entry point: validates environment and arguments, dispatches to resource commands.
 # Handles global options, confirmation prompts, and routing to list/install/update flows.
 main() {
-  if [[ "$1" != "completions" && "$1" != "--version" && "$1" != "-v" && "$1" != "--config" ]]; then
+  # Immediately handle completions to avoid any other script output
+  if [[ "$1" == "--completions" ]]; then
+    shell_completions
+    exit 0
+  fi
+
+  if [[ "$1" != "--version" && "$1" != "-v" && "$1" != "--config" ]]; then
     echo
     check_dependencies
     check_applist_file
@@ -147,7 +135,7 @@ main() {
       cleanup_backups
       exit 0
       ;;
-    completions)
+    --completions)
       shell_completions
       exit 0
       ;;
@@ -251,10 +239,10 @@ main() {
           # No sub-command specified, default behavior is 'all'
           ;;
         *)
-          # If it's not a recognized sub-command, it might be a package name
-          # For now, we'll treat unrecognized arguments as invalid
+          # If it's not a recognized sub-command, show contextual help
           echo
-          msg_error "Invalid sub-command: $1. Valid sub-commands: outdated, all"
+          msg_error --color "Unknown sub-command: <$1>"
+          show_contextual_help "sub_command" "${resource_type}" "${command}"
           exit 1
           ;;
       esac
