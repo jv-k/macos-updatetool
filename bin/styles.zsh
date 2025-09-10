@@ -1,12 +1,42 @@
 #!/bin/zsh
 
-# Terminal styling definitions
+# Styles module
 #
-# This file contains ANSI color codes, text formatting, and symbol definitions
-# for consistent styling across the macos-updatetool utility.
+# Purpose:
+# - Provide comprehensive ANSI color codes and text formatting definitions for consistent terminal styling.
+# - Offer utilities for combining, chaining, and applying multiple style attributes to text output.
+# - Enable dynamic style demonstration and testing capabilities for development and debugging.
+#
+# Responsibilities:
+# - Define extensive color palettes (standard, light, high-intensity, and background colors).
+# - Provide text formatting options (bold, italic, underline, strikethrough, etc.).
+# - Supply semantic UI symbols for consistent visual communication (✔, ✖, !, ?, •, ℹ).
+# - Implement style chaining utilities for combining multiple formatting attributes.
+# - Generate header styles (H1-H6) with appropriate visual hierarchy.
+# - Offer text wrapping functions that apply styles and automatically reset formatting.
+#
+# Public functions (used by main script and other modules):
+# - style_chain(styles...)        : combine multiple ANSI codes into single escape sequence
+# - style_wrap(styles..., text)   : wrap text with styles and automatic reset
+# - style_h1-h6(text)             : semantic header functions with predefined styling
+# - style_quote(text)             : styled quote formatting
+# - style_demo()                  : comprehensive demonstration of all available styles
+#
+# Public constants:
+# - STYLE[key]                    : associative array of ANSI escape codes
+# - SYMBOL[key]                   : associative array of UI symbols
+# - Header styles (H1-H7, QUOTE)  : pre-configured style combinations
+#
+# Notes:
+# - Interactive detection automatically shows demo when sourced directly in shell.
+# - All functions preserve terminal state by including RESET sequences.
+# - Style combinations are optimized to avoid conflicting or redundant codes.
+# - Designed to work consistently across different terminal emulators and themes.
 #
 # Author: John Valai <git@jvk.to>
 # License: MIT License
+
+# shellcheck disable=SC2128
 
 # Extended color definitions based on ANSI codes
 typeset -A STYLE=(
@@ -69,11 +99,10 @@ typeset -A STYLE=(
   [RESET]='\e[0m'
 )
 
-# /**
-#  * Builds a single ANSI escape sequence by chaining multiple STYLE keys, omitting resets.
-#  * @param {...string} args - Style keys from the STYLE map (e.g., BOLD, RED).
-#  * @returns {string} ANSI sequence printed to stdout without newline.
-#  */
+
+# Builds a single ANSI escape sequence by chaining multiple STYLE keys, omitting resets.
+# @param {...string} args - Style keys from the STYLE map (e.g., BOLD, RED).
+# @returns {string} ANSI sequence printed to stdout without newline.
 # Chain styles: usage style_chain BOLD RED
 # @param {...string} args - List of style keys from the STYLE associative array
 style_chain() {
@@ -84,34 +113,30 @@ style_chain() {
     if [[ ${code} =~ $'\\e\\[([0-9;]+)m' ]]; then
       local extracted_codes="${match[1]}"
       # Split by semicolon and filter out reset codes (0) to avoid canceling formatting
-      local -a code_parts=(${(s:;:)extracted_codes})
+      local -a code_parts=("${(s:;:)extracted_codes}")
       for part in "${code_parts[@]}"; do
         # Skip reset codes (0) to avoid canceling previous formatting
         if [[ ${part} != "0" ]]; then
-          codes+=(${part})
+          codes+=("${part}")
         fi
       done
     fi
   done
   # Join all codes with semicolons and create single escape sequence
   if [[ ${#codes[@]} -gt 0 ]]; then
-    local combined_codes=$(IFS=';'; echo "${codes[*]}")
+    local combined_codes
+    combined_codes=$(IFS=';'; echo "${codes[*]}")
     echo -en "\e[${combined_codes}m"
   fi
 }
 
-# /**
-#  * Wraps text with one or more style codes and resets at the end.
-#  * @param {...string} args - One or more style keys followed by the text to style.
-#  * @param {string} text - The text to apply the styles to (last argument).
-#  * @returns {string} Styled string printed to stdout.
-#  */
 # Wrap text with styles: usage style_wrap BOLD RED "Hello"
 # @param {...string} args - List of style keys followed by the text to style
+# @returns {string} Styled string printed to stdout.
 style_wrap() {
   local n=${#@}
   local styles=("${@:1:$((n-1))}")
-  local text="${@[${n}]}"
+  local text="${*[${n}]}"
   local out=""
   for style in "${styles[@]}"; do
     out+="${STYLE[${style}]}"
@@ -150,11 +175,9 @@ style_h5() { style_wrap UNDERLINE GREEN "$*"; }
 style_h6() { style_wrap UNDERLINE PURPLE "$*"; }
 style_quote() { style_wrap ITALIC CYAN "$*"; }
 
-# /**
-#  * Prints a demo of all available styles for interactive shells.
-#  */
+# Prints a demo of all available styles for interactive shells.
 style_demo() {
-  echo "\n--- STYLES Demo ---"
+  echo -e "\n--- STYLES Demo ---"
   typeset -a STYLE_ORDER=(
     DEFAULT_FG BLACK RED GREEN YELLOW BLUE PURPLE CYAN WHITE
     LIGHT_BLACK LIGHT_RED LIGHT_GREEN LIGHT_YELLOW LIGHT_BLUE LIGHT_PURPLE LIGHT_CYAN LIGHT_WHITE
@@ -170,5 +193,8 @@ style_demo() {
   done
 }
 
-# if sourced from the interactive shell, show demo
-[[ -o interactive ]] && style_demo
+# if sourced directly from the interactive shell (not from another script), show demo
+# Check if we're in an interactive shell AND this file is being sourced directly
+if [[ -o interactive && ( -z "${ZSH_SCRIPT}" && -z "${BASH_SOURCE}" ) ]]; then
+  style_demo
+fi
