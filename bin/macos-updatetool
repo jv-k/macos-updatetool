@@ -1,10 +1,5 @@
 #!/bin/zsh
 
-LOGO=(
- " █▀▄▀█ ▄▀▀▄ ▄▀▀▄ ▄▀▀▄ █▀▀    █  █ ▄▀▀▄ █▀▀▄ ▄▀▀▄ ▀█▀ █▀▀ ▀█▀ ▄▀▀▄ ▄▀▀▄ █  "
- " █ ▀ █ █▄▄█ █  ▄ █  █ ▀▀▄ ▀▀ █  █ █▄▄█ █  █ █▄▄█  █  █▀▀  █  █  █ █  █ █  "
- " ▀   ▀ ▀  ▀  ▀▀   ▀▀  ▀▀▀     ▀▀▀ █    ▀▀▀  ▀  ▀  ▀  ▀▀▀  ▀   ▀▀   ▀▀  ▀▀▀"
-)
 # A CLI tool that manages apps and packages on macOS.
 # It handles Homebrew, npm, App Store apps, and Xcode components.
 # Author:
@@ -61,12 +56,54 @@ init_configuration
 APPLIST=$(get_config_value "applist_path")
 BACKUP_DIR=$(get_config_value "backup_dir")
 
+LOGO=(
+  " █▀▄▀█ ▄▀▀▄ ▄▀▀▄    █  █ ▄▀▀▄ █▀▀▄ ▄▀▀▄ ▀█▀ █▀▀ ▄▀▀▄"
+  " █ ▀ █ █▄▄█ █  ▄ ▀▀ █  █ █▄▄█ █  █ █▄▄█  █  █▀▀ █▀▀▄"
+  " ▀   ▀ ▀  ▀  ▀▀      ▀▀▀ █    ▀▀▀  ▀  ▀  ▀  ▀▀▀ ▀  ▀"
+)
+APPLE=(
+  '                                 _.'
+  '                             _/=\:<'
+  '                           //as\@#:'
+  '                         *~let:>@'
+  '                        (+!:~/+/'
+  '                        /={+|'
+  '         _.:+*as=._            _.]@~let[._'
+  '        .*()/iff{@[[-#>\=.__.<>/#{*+/@*/for=*~.'
+  '     [:/@#</>}#for=\>.<:try#>=\*:/[(var<<.+_:#(=.'
+  '    #do()=*:.>as//@[]-./[#=+)\(var/@<>[]:-##~/*> '
+  '  @#/*-:/#do./@var=\<)]#>/=\>\<for#>|*:try="</'
+  '  :/./@#[=#0~as|#:/~/@if.>#[.)=*>/let{}</):\~'
+  ' for):/=10#try:</=*;/((+do_1/!"(@~/(1:0>).*}'
+  ' /@#: @try*@!\as=\>_@.>#+var>®=>#+-do)=+@#>( '
+  ' try@#_<(=</>do#.<30#3\\=~*/()<))_+ 0 #()+1>'
+  '  *:#for@:@>):/#<\=*>@|var_J#|[/@*~/.<:if#/~1'
+  '  [for()={#in=*:as=\>_@-`>#do/l:/(/[+var)=＠#'
+  '   /@[as:=\+@#}=:/let[(=\<_)</@>＃for()=))#>in'
+  '    do=~\@#=\><<-))_1#(1)1)_+@let}:[+#=＠/if[()[='
+  '     =<})~if/.=＊@var<@:if/(~)=*:/#)=*>@#var<(}if/'
+  '      \.=let_0<)#)_=\<~#_)@J+@if#.L+#\|=@#~try/as'
+  '         +@>#do(as)*+[＃}=/(/#\<)if).+let:{t.#"'
+  '          {}</().try()＃#/as<){*～</>}}(as*>'
+  '             "{}<as: "           "*)}do>"'
+)
 
+# Renders the ASCII art logo in green.
+show_logo() {
+  for line in "${LOGO[@]}"; do
+    echo -e "$(style_wrap GREEN "${line}")"
   done
 }
 
+random_color() {
+  echo -e "\e[3$(( ${RANDOM} * 6 / 32767 + 1 ))m"
 }
 
+# Render Apple logo with random colors for each character
+show_apple_logo() {
+  for word in ${APPLE}; do
+    for ch in ${(s::)word}; do
+      print -n -- "\e[38;5;$((${RANDOM} % 256))m${ch}"
     done
     echo
   done
@@ -303,13 +340,5 @@ main() {
   esac
 }
 
-# /**
-#  * Renders the ASCII art logo in green.
-#  */
-show_logo() {
-  for line in "${LOGO[@]}"; do
-    echo -e "$(style_wrap GREEN "${line}")"
-  done
-}
 # Start the script by calling the main function with all command-line arguments.
 main "$@"
